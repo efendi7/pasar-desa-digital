@@ -1,21 +1,28 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 import Navbar from '@/components/Navbar';
-import Footer from '../components/Footer';
+import Footer from '@/components/Footer';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+
+// Import font lokal hanya untuk elemen tertentu
+const mova = localFont({
+  src: './fonts/Mova.ttf',
+  variable: '--font-mova',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Pasar Desa Digital',
   description: 'Etalase Digital untuk Produk UMKM Desa',
 };
 
-// Menambahkan tipe untuk props children
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="id" className={`${inter.variable} ${mova.variable}`}>
+      <body className="font-sans bg-[var(--background)] text-[var(--foreground)]">
         <div className="flex flex-col min-h-screen">
           <Navbar />
           <main className="flex-grow container mx-auto px-4 py-8">
