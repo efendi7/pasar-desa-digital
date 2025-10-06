@@ -14,6 +14,19 @@ const mova = localFont({
   display: 'swap',
 });
 
+// Font Seagram
+const seagram = localFont({
+  src: './fonts/Seagram tfb.ttf',
+  variable: '--font-seagram',
+  display: 'swap',
+});
+
+const madeTommy = localFont({
+  src: './fonts/MADE Tommy Soft Regular PERSONAL USE.otf',
+  variable: '--font-made-tommy',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: 'Pasar Desa Digital',
   description: 'Etalase Digital untuk Produk UMKM Desa',
@@ -21,7 +34,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" className={`${inter.variable} ${mova.variable}`}>
+    <html lang="id" className={`${inter.variable} ${mova.variable} ${madeTommy.variable}`}>
+
       <body className="font-sans bg-[var(--background)] text-[var(--foreground)]">
         <div className="flex flex-col min-h-screen">
           <Navbar />
