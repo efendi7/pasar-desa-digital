@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingCart, Store, Package, Eye, TrendingUp } from "lucide-react";
+import { ShoppingCart, Store, Package, Eye, TrendingUp, TrendingDown } from "lucide-react";
 import React, { useEffect } from "react";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { motion, useInView, useMotionValue, useTransform, animate } from "framer-motion";
@@ -10,6 +10,7 @@ interface Stats {
   umkm: number;
   products: number;
   views: number;
+  trend: number;
 }
 
 interface HeroSectionProps {
@@ -164,16 +165,41 @@ export const HeroSection = ({ stats }: HeroSectionProps) => {
                 ))}
               </div>
 
-              {/* Lencana floating */}
-              <div className="absolute -top-5 -right-5 bg-gradient-to-br from-green-500 to-green-600 text-white px-6 py-3 rounded-2xl shadow-xl transform rotate-3">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  <div>
-                    <p className="text-xs font-medium">Trending</p>
-                    <p className="text-lg font-bold">+50%</p>
-                  </div>
-                </div>
-              </div>
+             {/* Lencana floating dinamis */}
+<div
+  className={`absolute -top-5 -right-5 px-6 py-3 rounded-2xl shadow-xl transform rotate-3
+  ${
+    stats.trend > 0
+      ? "bg-gradient-to-br from-green-500 to-green-600 text-white"
+      : stats.trend < 0
+      ? "bg-gradient-to-br from-red-500 to-red-600 text-white"
+      : "bg-gradient-to-br from-gray-400 to-gray-500 text-white"
+  }`}
+>
+  <div className="flex items-center gap-2">
+    {/* Ganti ikon sesuai arah tren */}
+    {stats.trend > 0 ? (
+      <TrendingUp className="w-5 h-5" />
+    ) : stats.trend < 0 ? (
+      <TrendingDown className="w-5 h-5" />
+    ) : (
+      <TrendingUp className="w-5 h-5 opacity-60" />
+    )}
+
+    <div>
+      <p className="text-xs font-medium">Weekly Trend</p>
+      <p className="text-lg font-bold">
+        {stats.trend > 0
+          ? `Naik ${stats.trend.toFixed(2)}%`
+          : stats.trend < 0
+          ? `Turun ${Math.abs(stats.trend).toFixed(2)}%`
+          : "Stabil"}
+      </p>
+    </div>
+  </div>
+</div>
+
+
             </div>
           </div>
         </div>
