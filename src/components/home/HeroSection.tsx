@@ -187,7 +187,7 @@ export const HeroSection = ({ stats }: HeroSectionProps) => {
     )}
 
     <div>
-      <p className="text-xs font-medium">Weekly Trend</p>
+      <p className="text-xs font-medium">Trend Mingguan</p>
       <p className="text-lg font-bold">
         {stats.trend > 0
           ? `Naik ${stats.trend.toFixed(2)}%`

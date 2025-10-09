@@ -45,6 +45,44 @@ export default function ProductDetailPage() {
     if (productId) loadProduct();
   }, [productId]);
 
+  // Fungsi untuk cek apakah user sudah view hari ini
+  function hasViewedToday(productId: string): boolean {
+    const viewsData = localStorage.getItem('product_views');
+    if (!viewsData) return false;
+
+    try {
+      const views: Record<string, string> = JSON.parse(viewsData);
+      const lastViewDate = views[productId];
+      
+      if (!lastViewDate) return false;
+
+      // Cek apakah masih hari yang sama
+      const today = new Date().toDateString();
+      const lastView = new Date(lastViewDate).toDateString();
+      
+      return today === lastView;
+    } catch {
+      return false;
+    }
+  }
+
+  // Fungsi untuk menyimpan view hari ini
+  function markAsViewedToday(productId: string) {
+    const viewsData = localStorage.getItem('product_views');
+    let views: Record<string, string> = {};
+
+    if (viewsData) {
+      try {
+        views = JSON.parse(viewsData);
+      } catch {
+        views = {};
+      }
+    }
+
+    views[productId] = new Date().toISOString();
+    localStorage.setItem('product_views', JSON.stringify(views));
+  }
+
   async function loadProduct() {
     setLoading(true);
 
@@ -65,13 +103,25 @@ export default function ProductDetailPage() {
 
     setProduct(productData);
 
-    // ✅ Mencegah view naik berulang dalam satu sesi
-    const sessionKey = `viewed_${productId}`;
-    const hasViewed = sessionStorage.getItem(sessionKey);
-
-    if (!hasViewed) {
-      await supabase.rpc('increment_views', { product_id: productId });
-      sessionStorage.setItem(sessionKey, 'true');
+    // ✅ Cek apakah sudah view hari ini
+    const alreadyViewed = hasViewedToday(productId);
+    console.log('Already viewed today?', alreadyViewed);
+    
+    if (!alreadyViewed) {
+      console.log('Incrementing views for product:', productId);
+      
+      // Increment views di database
+      const { data, error } = await supabase.rpc('increment_views', { product_id: productId });
+      
+      if (error) {
+        console.error('Error incrementing views:', error);
+      } else {
+        console.log('Views incremented successfully!');
+        // Simpan record bahwa sudah view hari ini
+        markAsViewedToday(productId);
+      }
+    } else {
+      console.log('Skip increment - already viewed today');
     }
 
     // Produk serupa

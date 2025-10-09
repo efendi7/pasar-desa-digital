@@ -36,7 +36,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id" className={`${inter.variable} ${mova.variable} ${madeTommy.variable}`}>
 
-      <body className="font-sans bg-[var(--background)] text-[var(--foreground)]">
+      <body className="font-sans bg-[var(--background)] text-[var(--foreground)] overflow-x-hidden">
+
         <div className="flex flex-col min-h-screen">
           <Navbar />
           <main className="flex-grow container mx-auto px-4 py-8">

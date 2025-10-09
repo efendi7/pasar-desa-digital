@@ -1,4 +1,5 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -9,12 +10,14 @@ export default function EditProfilePage() {
   const [storeName, setStoreName] = useState('');
   const [storeDescription, setStoreDescription] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
-  
+
   const supabase = createClient();
   const router = useRouter();
 
@@ -41,9 +44,54 @@ export default function EditProfilePage() {
       setStoreName(profile.store_name || '');
       setStoreDescription(profile.store_description || '');
       setWhatsappNumber(profile.whatsapp_number || '');
+      setAvatarUrl(profile.avatar_url || null);
     }
 
     setLoading(false);
+  }
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    try {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setUploading(true);
+      setError('');
+      setSuccess('');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+const filePath = `${userId}/${fileName}`;
+
+      // Upload ke Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      const publicUrl = publicUrlData.publicUrl;
+
+      // Update profile di tabel
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      setSuccess('Foto profil berhasil diunggah!');
+    } catch (err: any) {
+      console.error(err);
+      setError('Gagal mengunggah foto profil');
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -66,15 +114,13 @@ export default function EditProfilePage() {
           store_name: storeName,
           store_description: storeDescription,
           whatsapp_number: whatsappNumber,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', userId);
 
       if (updateError) throw updateError;
 
       setSuccess('Profil berhasil diperbarui!');
-      
-      // Redirect after 1.5 seconds
       setTimeout(() => {
         router.push('/dashboard');
       }, 1500);
@@ -105,13 +151,41 @@ export default function EditProfilePage() {
       </div>
 
       <div className="bg-white rounded-lg shadow-md p-8">
-        <div className="mb-6">
+        <div className="mb-6 text-center">
           <h1 className="text-3xl font-bold text-gray-800">
             Edit Profil Toko
           </h1>
           <p className="text-gray-600 mt-2">
             Perbarui informasi toko Anda yang akan ditampilkan kepada pembeli
           </p>
+        </div>
+
+        {/* Foto Profil */}
+        <div className="flex flex-col items-center mb-8">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt="Foto Profil"
+              className="w-28 h-28 rounded-full object-cover border-4 border-green-200 shadow-md"
+            />
+          ) : (
+            <div className="w-28 h-28 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-3xl font-bold shadow-inner">
+              {storeName?.charAt(0)?.toUpperCase() || 'U'}
+            </div>
+          )}
+
+          <label className="mt-4 cursor-pointer text-sm font-medium text-green-700 hover:text-green-800">
+            <span className="underline">
+              {uploading ? 'Mengunggah...' : 'Ubah Foto Profil'}
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+              disabled={uploading}
+            />
+          </label>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -154,12 +228,9 @@ export default function EditProfilePage() {
               value={storeDescription}
               onChange={(e) => setStoreDescription(e.target.value)}
               rows={5}
-              placeholder="Ceritakan tentang toko/UMKM Anda: produk unggulan, pengalaman, visi, dll."
+              placeholder="Ceritakan tentang toko/UMKM Anda..."
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Deskripsi ini akan ditampilkan di halaman profil toko Anda
-            </p>
           </div>
 
           {/* WhatsApp Number */}
@@ -180,9 +251,6 @@ export default function EditProfilePage() {
                 className="flex-1 px-4 py-2 border rounded-r-md focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Nomor ini akan digunakan pembeli untuk menghubungi Anda via WhatsApp
-            </p>
           </div>
 
           {/* Success Message */}
@@ -217,17 +285,6 @@ export default function EditProfilePage() {
             </Link>
           </div>
         </form>
-
-        {/* Additional Info */}
-        <div className="mt-8 pt-6 border-t">
-          <h3 className="font-semibold text-gray-800 mb-2">Tips:</h3>
-          <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
-            <li>Gunakan nama toko yang mudah diingat dan mencerminkan produk Anda</li>
-            <li>Deskripsi yang detail membantu pembeli mengenal toko Anda lebih baik</li>
-            <li>Pastikan nomor WhatsApp aktif agar pembeli bisa menghubungi Anda</li>
-            <li>Perbarui informasi secara berkala agar tetap akurat</li>
-          </ul>
-        </div>
       </div>
     </div>
   );

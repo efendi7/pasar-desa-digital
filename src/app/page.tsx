@@ -1,4 +1,5 @@
 // src/app/page.tsx
+
 import { createClient } from "@/utils/supabase/server";
 import { HeroSection } from "@/components/home/HeroSection";
 import { HowItWorks } from "@/components/home/HowItWorks";
@@ -7,14 +8,18 @@ import { ProductsSection } from "@/components/home/ProductsSection";
 import { CTASection } from "@/components/home/CTASection";
 import { getStats } from "@/lib/getStats";
 
+export const revalidate = 0;
+
+// ✅ FIX: Menyesuaikan interface agar cocok dengan data dari Supabase
 export interface Product {
   id: string;
   name: string;
   price: number;
   image_url: string | null;
   views: number;
-  profiles: { store_name: string } | null;
-  categories: { name: string } | null;
+  // Mengubah dari objek tunggal menjadi array objek
+  profiles: { store_name: string }[] | null;
+  categories: { name: string }[] | null;
 }
 
 export interface Category {
@@ -27,13 +32,15 @@ export interface Stats {
   umkm: number;
   products: number;
   views: number;
+  trend: number;
 }
 
 export default async function IndexPage() {
   const supabase = createClient();
-  const statsData = await getStats(); // ✅ ubah nama variabel agar tidak bentrok
+  const statsData = await getStats();
 
-  // Jalankan query paralel untuk efisiensi
+  console.log("Latest Server Stats Data:", statsData);
+
   const [productsResult, categoriesResult] = await Promise.all([
     supabase
       .from("products")
@@ -53,14 +60,14 @@ export default async function IndexPage() {
   const categories = categoriesResult.data || [];
 
   return (
-    <div className="min-h-screen">
-      {/* ✅ kirim statsData ke HeroSection */}
+    <div className="min-h-screen w-full overflow-x-hidden">
       <HeroSection stats={statsData} />
 
-      <div className="container mx-auto px-4 py-8 space-y-16">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8 space-y-16 max-w-[1920px] mx-auto">
         <HowItWorks />
         <CategoriesSection categories={categories} />
-        <ProductsSection products={products as any} />
+        {/* Sekarang, tipe 'products' akan cocok dengan 'Product[]' */}
+        <ProductsSection products={products as Product[]} />
       </div>
 
       <CTASection />
