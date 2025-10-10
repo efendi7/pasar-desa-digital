@@ -1,0 +1,58 @@
+{
+  "type": "FeatureCollection",
+  "name": "ADMINISTRASIDESA_AR_25K",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "KDPPUM": null,
+        "NAMOBJ": "Kebumen",
+        "REMARK": "Wilayah Administrasi Kelurahan/Desa",
+        "KDPBPS": null,
+        "FCODE": null,
+        "LUASWH": 0.0,
+        "UUPP": null,
+        "SRS_ID": null,
+        "LCODE": "BA0020",
+        "METADATA": null,
+        "KDEBPS": null,
+        "KDEPUM": null,
+        "KDCBPS": null,
+        "KDCPUM": null,
+        "KDBBPS": null,
+        "KDBPUM": null,
+        "WADMKD": null,
+        "WIADKD": null,
+        "WADMKC": "Grabag",
+        "WIADKC": null,
+        "WADMKK": "Semarang",
+        "WIADKK": null,
+        "WADMPR": "Jawa Tengah",
+        "WIADPR": null,
+        "TIPADM": 0,
+        "SHAPE_Leng": 0.110117368535,
+        "SHAPE_Area": 0.000358037139848
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [110.286607, -7.3640752, 0.0],
+            [110.286252, -7.363771, 0.0],
+            [110.285871, -7.363912, 0.0],
+            [110.285449, -7.363982, 0.0],
+            [110.285146, -7.364272, 0.0],
+            [110.285111, -7.364515, 0.0],
+            [110.285247, -7.364821, 0.0],
+            [110.285442, -7.364999, 0.0],
+            [110.285726, -7.365008, 0.0],
+            [110.285956, -7.364862, 0.0],
+            [110.286185, -7.36463, 0.0],
+            [110.2863469, -7.364517, 0.0],
+            [110.286607, -7.3640752, 0.0]
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -149,23 +149,32 @@ export default function ProductsClient({
   function filterProducts() {
     let filtered = products;
 
-    if (selectedCategory !== 'all') filtered = filtered.filter((p) => p.categories?.slug === selectedCategory);
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter((p) => p.categories?.slug === selectedCategory);
+    }
 
     const trimmedQuery = debouncedSearch.trim();
     if (trimmedQuery) {
-      if (trimmedQuery.length < 3) setSearchWarning('Minimal 3 karakter untuk pencarian');
-      else {
+      if (trimmedQuery.length < 3) {
+        setSearchWarning('Minimal 3 karakter untuk pencarian');
+      } else {
         setSearchWarning('');
         const query = trimmedQuery.toLowerCase();
         filtered = filtered.filter(
-          (p) => p.name.toLowerCase().includes(query) || p.profiles?.store_name.toLowerCase().includes(query)
+          (p) => 
+            p.name.toLowerCase().includes(query) || 
+            p.profiles?.store_name.toLowerCase().includes(query)
         );
       }
-    } else setSearchWarning('');
+    } else {
+      setSearchWarning('');
+    }
 
     setFilteredProducts(filtered);
 
-    if (currentPage > Math.ceil(filtered.length / ITEMS_PER_PAGE)) setCurrentPage(1);
+    if (currentPage > Math.ceil(filtered.length / ITEMS_PER_PAGE)) {
+      setCurrentPage(1);
+    }
     setLoading(false);
   }
 
@@ -205,6 +214,7 @@ export default function ProductsClient({
 
   return (
     <div className="min-h-screen">
+      {/* Breadcrumb */}
       <nav className="mb-6 text-sm">
         <ol className="flex items-center gap-2 text-gray-600">
           <li>
@@ -217,11 +227,13 @@ export default function ProductsClient({
         </ol>
       </nav>
 
+      {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-gray-800 mb-2">Katalog Produk</h1>
         <p className="text-gray-600">Temukan produk UMKM terbaik dari desa</p>
       </div>
 
+      {/* Filter Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
@@ -232,7 +244,9 @@ export default function ProductsClient({
               placeholder="Cari produk atau toko (min. 3 karakter)..."
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
             />
-            {searchWarning && <p className="text-xs text-orange-600 mt-1">⚠️ {searchWarning}</p>}
+            {searchWarning && (
+              <p className="text-xs text-orange-600 mt-1">⚠️ {searchWarning}</p>
+            )}
           </div>
           <div className="md:w-64">
             <select
@@ -251,6 +265,7 @@ export default function ProductsClient({
         </div>
       </div>
 
+      {/* Results Info */}
       {!loading && (
         <div className="mb-4 text-gray-600 text-sm md:text-base">
           {filteredProducts.length > 0 ? (
@@ -277,6 +292,7 @@ export default function ProductsClient({
         </div>
       )}
 
+      {/* Products Grid */}
       {loading ? (
         <ProductsGridSkeleton />
       ) : filteredProducts.length === 0 ? (
@@ -299,30 +315,48 @@ export default function ProductsClient({
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {currentProducts.map((product) => (
-              <Link
+              <div
                 key={product.id}
-                href={`/products/${product.id}`}
                 className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition group"
               >
-                <div className="h-48 bg-gray-200 overflow-hidden relative">
-                  {product.image_url ? (
-                    <img
-                      src={product.image_url}
-                      alt={product.name}
-                      loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-5xl">
-                      📦
-                    </div>
-                  )}
-                </div>
+                {/* Product Image - Clickable */}
+                <Link href={`/products/${product.id}`}>
+                  <div className="h-48 bg-gray-200 overflow-hidden relative cursor-pointer">
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-5xl">
+                        📦
+                      </div>
+                    )}
+                  </div>
+                </Link>
+
+                {/* Product Info */}
                 <div className="p-4">
-                  <h3 className="font-semibold text-gray-800 mb-1 line-clamp-2 group-hover:text-green-600 transition">
-                    {product.name}
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-2">{product.profiles?.store_name}</p>
+                  {/* Product Name - Clickable */}
+                  <Link href={`/products/${product.id}`}>
+                    <h3 className="font-semibold text-gray-800 mb-1 line-clamp-2 group-hover:text-green-600 transition cursor-pointer">
+                      {product.name}
+                    </h3>
+                  </Link>
+
+                  {/* Store Name - Separate Link */}
+                  {product.profiles?.store_name && (
+                    <Link
+                      href={`/store/${product.profiles.id}`}
+                      className="text-sm text-amber-600 hover:underline font-medium mb-2 block"
+                    >
+                      {product.profiles.store_name}
+                    </Link>
+                  )}
+
+                  {/* Price & Category */}
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-bold text-green-600">
                       Rp {product.price.toLocaleString('id-ID')}
@@ -334,10 +368,16 @@ export default function ProductsClient({
                     )}
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
-          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+
+          {/* Pagination */}
+          <Pagination 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+            onPageChange={handlePageChange} 
+          />
         </>
       )}
     </div>

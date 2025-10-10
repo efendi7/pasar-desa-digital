@@ -4,6 +4,16 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+const StoreMap = dynamic(() => import('@/components/StoreMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-64 w-full bg-gray-200 animate-pulse rounded-md flex items-center justify-center">
+      Memuat peta...
+    </div>
+  ),
+});
 
 export default function EditProfilePage() {
   const [fullName, setFullName] = useState('');
@@ -18,38 +28,52 @@ export default function EditProfilePage() {
   const [success, setSuccess] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
 
+  // ✅ Ubah ke null agar GPS auto-detect bisa bekerja
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+
   const supabase = createClient();
   const router = useRouter();
 
   useEffect(() => {
+    async function loadProfile() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+
+      setUserId(user.id);
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setFullName(profile.full_name || '');
+        setStoreName(profile.store_name || '');
+        setStoreDescription(profile.store_description || '');
+        setWhatsappNumber(profile.whatsapp_number || '');
+        setAvatarUrl(profile.avatar_url || null);
+        
+        // ✅ Hanya set jika ada data dari database
+        // Jika null, biarkan GPS auto-detect
+        if (profile.latitude && profile.longitude) {
+          setLatitude(profile.latitude);
+          setLongitude(profile.longitude);
+        }
+        // ✅ Jika tidak ada koordinat tersimpan, biarkan null
+        // StoreMap akan auto-detect GPS atau gunakan default Temanggung
+      }
+
+      setLoading(false);
+    }
+
     loadProfile();
-  }, []);
-
-  async function loadProfile() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    setUserId(user.id);
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
-    if (profile) {
-      setFullName(profile.full_name || '');
-      setStoreName(profile.store_name || '');
-      setStoreDescription(profile.store_description || '');
-      setWhatsappNumber(profile.whatsapp_number || '');
-      setAvatarUrl(profile.avatar_url || null);
-    }
-
-    setLoading(false);
-  }
-
+  }, [supabase, router]);
+  
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     try {
       const file = e.target.files?.[0];
@@ -61,22 +85,23 @@ export default function EditProfilePage() {
 
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
-const filePath = `${userId}/${fileName}`;
+      const filePath = `${userId}/${fileName}`;
 
-      // Upload ke Supabase Storage
+      // Upload ke storage Supabase
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
+      // Ambil public URL dari file
       const { data: publicUrlData } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
       const publicUrl = publicUrlData.publicUrl;
 
-      // Update profile di tabel
+      // Update URL avatar di tabel profiles
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
@@ -106,6 +131,13 @@ const filePath = `${userId}/${fileName}`;
       return;
     }
 
+    // ✅ Validasi: koordinat harus sudah terisi
+    if (!latitude || !longitude) {
+      setError('Mohon set lokasi toko terlebih dahulu (klik tombol GPS atau pilih di peta)');
+      setSaving(false);
+      return;
+    }
+
     try {
       const { error: updateError } = await supabase
         .from('profiles')
@@ -114,6 +146,8 @@ const filePath = `${userId}/${fileName}`;
           store_name: storeName,
           store_description: storeDescription,
           whatsapp_number: whatsappNumber,
+          latitude,
+          longitude,
           updated_at: new Date().toISOString(),
         })
         .eq('id', userId);
@@ -140,151 +174,144 @@ const filePath = `${userId}/${fileName}`;
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="mb-6">
-        <Link
-          href="/dashboard"
-          className="text-green-600 hover:underline flex items-center gap-2"
-        >
-          ← Kembali ke Dashboard
-        </Link>
-      </div>
-
+    <div className="max-w-3xl mx-auto p-4">
       <div className="bg-white rounded-lg shadow-md p-8">
-        <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-gray-800">
-            Edit Profil Toko
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Perbarui informasi toko Anda yang akan ditampilkan kepada pembeli
-          </p>
-        </div>
+        <h1 className="text-2xl font-semibold mb-6 text-gray-800">Edit Profil Toko</h1>
 
-        {/* Foto Profil */}
-        <div className="flex flex-col items-center mb-8">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt="Foto Profil"
-              className="w-28 h-28 rounded-full object-cover border-4 border-green-200 shadow-md"
-            />
-          ) : (
-            <div className="w-28 h-28 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-3xl font-bold shadow-inner">
-              {storeName?.charAt(0)?.toUpperCase() || 'U'}
-            </div>
-          )}
-
-          <label className="mt-4 cursor-pointer text-sm font-medium text-green-700 hover:text-green-800">
-            <span className="underline">
-              {uploading ? 'Mengunggah...' : 'Ubah Foto Profil'}
-            </span>
+        {/* Avatar */}
+        <div className="flex items-center gap-4 mb-6">
+          <img
+            src={avatarUrl || '/default-avatar.png'}
+            alt="Avatar"
+            className="w-20 h-20 rounded-full object-cover border"
+          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Ubah Foto</label>
             <input
               type="file"
               accept="image/*"
-              onChange={handleAvatarUpload}
-              className="hidden"
+              onChange={(e) => handleAvatarUpload(e)}
               disabled={uploading}
+              className="mt-1 text-sm"
             />
-          </label>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Full Name */}
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nama Lengkap *
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Nama Lengkap</label>
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500"
               required
-              placeholder="Nama pemilik toko"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
 
-          {/* Store Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nama Toko / UMKM *
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Nama Toko</label>
             <input
               type="text"
               value={storeName}
               onChange={(e) => setStoreName(e.target.value)}
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500"
               required
-              placeholder="Contoh: Toko Keripik Bu Siti"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
 
-          {/* Store Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Deskripsi Toko
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Deskripsi Toko</label>
             <textarea
               value={storeDescription}
               onChange={(e) => setStoreDescription(e.target.value)}
-              rows={5}
-              placeholder="Ceritakan tentang toko/UMKM Anda..."
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              rows={3}
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500"
             />
           </div>
 
-          {/* WhatsApp Number */}
           <div>
+            <label className="block text-sm font-medium text-gray-700">Nomor WhatsApp</label>
+            <input
+              type="text"
+              value={whatsappNumber}
+              onChange={(e) => setWhatsappNumber(e.target.value)}
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500"
+            />
+          </div>
+
+          {/* Peta lokasi */}
+          <div className="mt-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nomor WhatsApp
+              Lokasi Toko <span className="text-red-500">*</span>
             </label>
-            <div className="flex gap-2">
-              <span className="px-3 py-2 bg-gray-100 border border-r-0 rounded-l-md text-gray-600">
-                +62
-              </span>
-              <input
-                type="tel"
-                value={whatsappNumber}
-                onChange={(e) => setWhatsappNumber(e.target.value)}
-                placeholder="8123456789"
-                pattern="[0-9]*"
-                className="flex-1 px-4 py-2 border rounded-r-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
+            <p className="text-sm text-gray-500 mb-2">
+              Klik tombol GPS untuk auto-detect lokasi Anda, atau klik/geser marker di peta.
+            </p>
+
+            {/* ✅ Selalu tampilkan map, biarkan auto-detect GPS */}
+            <StoreMap
+              latitude={latitude || undefined}
+              longitude={longitude || undefined}
+              onLocationChange={(lat, lng) => {
+                console.log('📍 Location updated:', lat, lng);
+                setLatitude(lat);
+                setLongitude(lng);
+              }}
+            />
+
+            {latitude && longitude && (
+              <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-sm text-green-800">
+                  ✅ <strong>Lokasi tersimpan:</strong>
+                </p>
+                <p className="text-xs text-gray-600 font-mono mt-1">
+                  {latitude.toFixed(6)}, {longitude.toFixed(6)}
+                </p>
+              </div>
+            )}
+
+            {!latitude && !longitude && (
+              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ Lokasi belum diset. Klik tombol GPS atau pilih lokasi di peta.
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Success Message */}
-          {success && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded flex items-center gap-2">
-              <span>✓</span>
-              {success}
-            </div>
-          )}
-
-          {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
+          
+          {success && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-green-600 text-sm">{success}</p>
             </div>
           )}
 
-          {/* Submit Button */}
-          <div className="flex gap-4">
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
-            >
-              {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
-            </button>
-            <Link
-              href="/dashboard"
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-semibold"
-            >
-              Batal
-            </Link>
-          </div>
+          <button
+            type="submit"
+            disabled={saving || !latitude || !longitude}
+            className="mt-6 w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-2 px-4 rounded-md font-medium transition"
+          >
+            {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
+          </button>
+
+          {!latitude && !longitude && (
+            <p className="text-xs text-center text-gray-500 mt-2">
+              Tombol simpan akan aktif setelah lokasi diset
+            </p>
+          )}
         </form>
+
+        <div className="mt-6 text-center">
+          <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-800">
+            ← Kembali ke Dashboard
+          </Link>
+        </div>
       </div>
     </div>
   );
