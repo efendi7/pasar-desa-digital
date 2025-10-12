@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Loader2, Search } from 'lucide-react';
 
 // --- Skeleton & Pagination ---
 function ProductCardSkeleton() {
@@ -57,11 +58,10 @@ function Pagination({
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
         className="flex items-center gap-2 px-4 py-2 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
-        aria-label="Previous page"
       >
-        <span>←</span>
-        <span className="hidden sm:inline">Previous</span>
+        ← <span className="hidden sm:inline">Previous</span>
       </button>
+
       <div className="flex gap-1">
         {allPages.map((page, index) =>
           page === '...' ? (
@@ -75,22 +75,19 @@ function Pagination({
               className={`min-w-[40px] px-3 py-2 border rounded-md transition ${
                 currentPage === page ? 'bg-green-600 text-white border-green-600' : 'hover:bg-gray-50'
               }`}
-              aria-label={`Go to page ${page}`}
-              aria-current={currentPage === page ? 'page' : undefined}
             >
               {page}
             </button>
           )
         )}
       </div>
+
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         className="flex items-center gap-2 px-4 py-2 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
-        aria-label="Next page"
       >
-        <span className="hidden sm:inline">Next</span>
-        <span>→</span>
+        <span className="hidden sm:inline">Next</span> →
       </button>
     </div>
   );
@@ -126,24 +123,18 @@ export default function ProductsClient({
   const ITEMS_PER_PAGE = 12;
   const router = useRouter();
 
-  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Filter products when category/search changes
   useEffect(() => {
     setLoading(true);
-    
-    // Add artificial delay to show skeleton
     const timer = setTimeout(() => {
       filterProducts();
       updateURL(1, selectedCategory, debouncedSearch);
     }, 300);
-
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory, debouncedSearch, products]);
 
   function filterProducts() {
@@ -161,8 +152,8 @@ export default function ProductsClient({
         setSearchWarning('');
         const query = trimmedQuery.toLowerCase();
         filtered = filtered.filter(
-          (p) => 
-            p.name.toLowerCase().includes(query) || 
+          (p) =>
+            p.name.toLowerCase().includes(query) ||
             p.profiles?.store_name.toLowerCase().includes(query)
         );
       }
@@ -171,7 +162,6 @@ export default function ProductsClient({
     }
 
     setFilteredProducts(filtered);
-
     if (currentPage > Math.ceil(filtered.length / ITEMS_PER_PAGE)) {
       setCurrentPage(1);
     }
@@ -187,24 +177,6 @@ export default function ProductsClient({
     router.push(`/products${queryString ? `?${queryString}` : ''}`, { scroll: false });
   }
 
-  function handleCategoryChange(category: string) {
-    setSelectedCategory(category);
-    setCurrentPage(1);
-  }
-
-  function handlePageChange(page: number) {
-    setCurrentPage(page);
-    updateURL(page, selectedCategory, debouncedSearch);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function handleResetFilter() {
-    setSelectedCategory('all');
-    setSearchQuery('');
-    setDebouncedSearch('');
-    setCurrentPage(1);
-  }
-
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
@@ -213,7 +185,7 @@ export default function ProductsClient({
   const endItem = Math.min(endIndex, filteredProducts.length);
 
   return (
-    <div className="min-h-screen">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Breadcrumb */}
       <nav className="mb-6 text-sm">
         <ol className="flex items-center gap-2 text-gray-600">
@@ -227,22 +199,29 @@ export default function ProductsClient({
         </ol>
       </nav>
 
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">Katalog Produk</h1>
-        <p className="text-gray-600">Temukan produk UMKM terbaik dari desa</p>
+      {/* Header - Selaras dengan Add Product */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-8">
+        <div className="bg-gradient-to-r from-green-50 to-green-100/50 px-8 py-6 border-b border-green-200">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Katalog Produk
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Temukan produk UMKM terbaik dari desa
+          </p>
+        </div>
       </div>
 
       {/* Filter Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 mb-8">
         <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari produk atau toko (min. 3 karakter)..."
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition"
             />
             {searchWarning && (
               <p className="text-xs text-orange-600 mt-1">⚠️ {searchWarning}</p>
@@ -251,8 +230,8 @@ export default function ProductsClient({
           <div className="md:w-64">
             <select
               value={selectedCategory}
-              onChange={(e) => handleCategoryChange(e.target.value)}
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition"
             >
               <option value="all">Semua Kategori</option>
               {categories.map((cat) => (
@@ -272,19 +251,6 @@ export default function ProductsClient({
             <>
               Menampilkan <span className="font-semibold">{startItem}-{endItem}</span> dari{' '}
               <span className="font-semibold">{filteredProducts.length}</span> produk
-              {selectedCategory !== 'all' && (
-                <>
-                  {' '}dalam kategori{' '}
-                  <span className="font-semibold">
-                    {categories.find((c) => c.slug === selectedCategory)?.name}
-                  </span>
-                </>
-              )}
-              {debouncedSearch.trim().length >= 3 && (
-                <>
-                  {' '}dengan kata kunci <span className="font-semibold">"{debouncedSearch}"</span>
-                </>
-              )}
             </>
           ) : (
             'Tidak ada produk yang ditampilkan'
@@ -296,7 +262,7 @@ export default function ProductsClient({
       {loading ? (
         <ProductsGridSkeleton />
       ) : filteredProducts.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-md p-12 text-center">
+        <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-12 text-center">
           <div className="text-6xl mb-4">🔍</div>
           <h3 className="text-2xl font-bold text-gray-800 mb-2">Produk Tidak Ditemukan</h3>
           <p className="text-gray-600 mb-6">
@@ -305,7 +271,12 @@ export default function ProductsClient({
               : 'Coba ubah filter atau kata kunci pencarian'}
           </p>
           <button
-            onClick={handleResetFilter}
+            onClick={() => {
+              setSelectedCategory('all');
+              setSearchQuery('');
+              setDebouncedSearch('');
+              setCurrentPage(1);
+            }}
             className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
           >
             Reset Filter
@@ -317,36 +288,27 @@ export default function ProductsClient({
             {currentProducts.map((product) => (
               <div
                 key={product.id}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition group"
+                className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl transition group"
               >
-                {/* Product Image - Clickable */}
                 <Link href={`/products/${product.id}`}>
-                  <div className="h-48 bg-gray-200 overflow-hidden relative cursor-pointer">
+                  <div className="h-48 bg-gray-200 overflow-hidden relative">
                     {product.image_url ? (
                       <img
                         src={product.image_url}
                         alt={product.name}
-                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-5xl">
-                        📦
-                      </div>
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-5xl">📦</div>
                     )}
                   </div>
                 </Link>
-
-                {/* Product Info */}
                 <div className="p-4">
-                  {/* Product Name - Clickable */}
                   <Link href={`/products/${product.id}`}>
                     <h3 className="font-semibold text-gray-800 mb-1 line-clamp-2 group-hover:text-green-600 transition cursor-pointer">
                       {product.name}
                     </h3>
                   </Link>
-
-                  {/* Store Name - Separate Link */}
                   {product.profiles?.store_name && (
                     <Link
                       href={`/store/${product.profiles.id}`}
@@ -355,8 +317,6 @@ export default function ProductsClient({
                       {product.profiles.store_name}
                     </Link>
                   )}
-
-                  {/* Price & Category */}
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-bold text-green-600">
                       Rp {product.price.toLocaleString('id-ID')}
@@ -372,14 +332,10 @@ export default function ProductsClient({
             ))}
           </div>
 
-          {/* Pagination */}
-          <Pagination 
-            currentPage={currentPage} 
-            totalPages={totalPages} 
-            onPageChange={handlePageChange} 
-          />
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </>
       )}
     </div>
   );
 }
+  

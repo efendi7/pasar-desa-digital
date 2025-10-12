@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import L, { LeafletMouseEvent } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { MapPin, LocateFixed, Loader2, X } from 'lucide-react';
 
-// ✅ Gunakan URL absolut untuk Turbopack
+// ✅ Gunakan URL absolut agar tidak error di Turbopack
 const markerIcon = new URL('leaflet/dist/images/marker-icon.png', import.meta.url).toString();
 const markerIcon2x = new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).toString();
 const markerShadow = new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).toString();
@@ -21,77 +22,80 @@ interface StoreMapProps {
   latitude?: number;
   longitude?: number;
   onLocationChange: (lat: number, lng: number) => void;
+  readonly?: boolean;
 }
 
-export default function StoreMap({ latitude, longitude, onLocationChange }: StoreMapProps) {
+export default function StoreMap({
+  latitude,
+  longitude,
+  onLocationChange,
+  readonly = false,
+}: StoreMapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
-  const [gpsStatus, setGpsStatus] = useState<'loading' | 'success' | 'denied' | 'unavailable'>('loading');
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
-  const [isRequestingGPS, setIsRequestingGPS] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
   const gpsAttemptedRef = useRef(false);
 
-  const DEFAULT_LOCATION: [number, number] = [-7.358831, 110.260700]; // ✅ Temanggung default
+  const [gpsStatus, setGpsStatus] = useState<'idle' | 'loading' | 'success' | 'denied' | 'unavailable'>('idle');
+  const [alertMessage, setAlertMessage] = useState('');
+  const [showAlert, setShowAlert] = useState(false);
+  const [isRequestingGPS, setIsRequestingGPS] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
+
+  const DEFAULT_LOCATION: [number, number] = [-7.358831, 110.2607];
 
   // =================== PERMINTAAN GPS ===================
   const requestGPSLocation = () => {
+    if (readonly) return;
     if (!('geolocation' in navigator)) {
       setGpsStatus('unavailable');
-      setAlertMessage('❌ Browser ini tidak mendukung Geolocation API.');
+      setAlertMessage('Browser ini tidak mendukung Geolocation API.');
       setShowAlert(true);
       return;
     }
 
     setIsRequestingGPS(true);
     setGpsStatus('loading');
-    setAlertMessage('🔄 Mendeteksi lokasi GPS...');
+    setAlertMessage('Mendeteksi lokasi GPS...');
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
-        const timestamp = new Date(position.timestamp).toLocaleTimeString('id-ID');
-
-        // Jika hasil terlalu tidak akurat (> 100m), abaikan
+      (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords;
         if (accuracy > 100) {
-          setAlertMessage('⚠️ GPS terlalu tidak akurat. Aktifkan GPS perangkat dan coba lagi.');
           setGpsStatus('unavailable');
+          setAlertMessage('GPS tidak akurat. Coba aktifkan GPS perangkat Anda.');
           setIsRequestingGPS(false);
           setShowAlert(true);
           return;
         }
-
-        console.log('📍 GPS Detected:', { latitude, longitude, accuracy, timestamp });
 
         setCurrentLocation([latitude, longitude]);
         onLocationChange(latitude, longitude);
         if (mapRef.current) mapRef.current.setView([latitude, longitude], 17);
 
         setGpsStatus('success');
-        setAlertMessage('✅ Lokasi GPS berhasil dideteksi!');
+        setAlertMessage('Lokasi GPS berhasil ditemukan!');
         setShowAlert(true);
         setIsRequestingGPS(false);
         setTimeout(() => setShowAlert(false), 4000);
       },
       (error) => {
-        console.error('❌ GPS Error:', error);
+        console.error('GPS Error:', error);
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            setAlertMessage('🚫 Akses lokasi ditolak. Aktifkan GPS di pengaturan perangkat Anda.');
             setGpsStatus('denied');
+            setAlertMessage('Akses lokasi ditolak.');
             break;
           case error.POSITION_UNAVAILABLE:
-            setAlertMessage('❌ Lokasi tidak tersedia. Aktifkan GPS perangkat Anda.');
             setGpsStatus('unavailable');
+            setAlertMessage('Lokasi tidak tersedia.');
             break;
           case error.TIMEOUT:
-            setAlertMessage('⏱️ Timeout! Aktifkan GPS dan coba lagi.');
             setGpsStatus('unavailable');
+            setAlertMessage('Timeout mendeteksi lokasi.');
             break;
           default:
-            setAlertMessage('❌ Terjadi kesalahan saat mendeteksi lokasi.');
             setGpsStatus('unavailable');
+            setAlertMessage('Terjadi kesalahan saat mendeteksi lokasi.');
         }
         setShowAlert(true);
         setIsRequestingGPS(false);
@@ -107,7 +111,6 @@ export default function StoreMap({ latitude, longitude, onLocationChange }: Stor
   // =================== INISIALISASI PETA ===================
   useEffect(() => {
     if (mapRef.current || typeof window === 'undefined') return;
-
     const mapEl = document.getElementById('store-map');
     if (!mapEl) return;
 
@@ -119,32 +122,40 @@ export default function StoreMap({ latitude, longitude, onLocationChange }: Stor
       zoom: 16,
       minZoom: 5,
       maxZoom: 18,
+      dragging: true,
+      touchZoom: true,
+      scrollWheelZoom: true,
+      doubleClickZoom: true,
+      keyboard: false,
+      
+      preferCanvas: true,
     });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
+      attribution: '&copy; OpenStreetMap',
     }).addTo(map);
 
-    const marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
+    const marker = L.marker([initialLat, initialLng], { draggable: !readonly }).addTo(map);
 
-    marker.on('dragend', (e) => {
-      const { lat, lng } = e.target.getLatLng();
-      setCurrentLocation([lat, lng]);
-      onLocationChange(lat, lng);
-    });
+    if (!readonly) {
+      marker.on('dragend', (e) => {
+        const { lat, lng } = e.target.getLatLng();
+        setCurrentLocation([lat, lng]);
+        onLocationChange(lat, lng);
+      });
 
-    map.on('click', (e: LeafletMouseEvent) => {
-      const { lat, lng } = e.latlng;
-      setCurrentLocation([lat, lng]);
-      onLocationChange(lat, lng);
-      marker.setLatLng([lat, lng]);
-    });
+      map.on('click', (e: LeafletMouseEvent) => {
+        const { lat, lng } = e.latlng;
+        setCurrentLocation([lat, lng]);
+        onLocationChange(lat, lng);
+        marker.setLatLng([lat, lng]);
+      });
+    }
 
     mapRef.current = map;
     markerRef.current = marker;
 
-    // Coba GPS otomatis sekali
-    if (!gpsAttemptedRef.current) {
+    if (!readonly && !gpsAttemptedRef.current) {
       gpsAttemptedRef.current = true;
       requestGPSLocation();
     }
@@ -156,9 +167,9 @@ export default function StoreMap({ latitude, longitude, onLocationChange }: Stor
         mapRef.current = null;
       }
     };
-  }, []);
+  }, [readonly]);
 
-  // Update marker saat koordinat berubah
+  // =================== UPDATE MARKER ===================
   useEffect(() => {
     const lat = currentLocation?.[0] || latitude || DEFAULT_LOCATION[0];
     const lng = currentLocation?.[1] || longitude || DEFAULT_LOCATION[1];
@@ -168,45 +179,62 @@ export default function StoreMap({ latitude, longitude, onLocationChange }: Stor
   const displayLat = currentLocation?.[0] || latitude || DEFAULT_LOCATION[0];
   const displayLng = currentLocation?.[1] || longitude || DEFAULT_LOCATION[1];
 
+  // =================== UI ===================
   return (
-    <div className="space-y-2">
+    <div className="space-y-3 leaflet-container-fix">
       {/* ALERT */}
-      {showAlert && (
-        <div className="p-3 rounded-lg border bg-yellow-50 border-yellow-300 text-yellow-800 text-sm">
-          <div className="flex items-start justify-between">
-            <p>{alertMessage}</p>
-            <button onClick={() => setShowAlert(false)} className="text-gray-500 hover:text-gray-700">
-              ✕
-            </button>
-          </div>
+      {!readonly && showAlert && (
+        <div className="p-3 rounded-lg border bg-yellow-50 dark:bg-yellow-900/40 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-100 text-sm flex justify-between items-start">
+          <p className="font-medium">{alertMessage}</p>
+          <button onClick={() => setShowAlert(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+            <X size={16} />
+          </button>
         </div>
       )}
 
       {/* MAP */}
-      <div id="store-map" className="h-96 w-full rounded-md border shadow-sm" />
+      <div
+        id="store-map"
+        className="h-96 w-full rounded-xl border shadow-inner overflow-hidden relative z-0"
+      />
 
       {/* BUTTON GPS */}
-      <div className="flex gap-2">
+      {!readonly && (
         <button
           onClick={requestGPSLocation}
           disabled={isRequestingGPS}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+          className="flex w-full items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:bg-muted disabled:text-muted-foreground font-medium shadow-sm"
         >
-          {isRequestingGPS ? 'Mendeteksi...' : gpsStatus === 'success' ? 'Refresh GPS' : 'Gunakan Lokasi GPS'}
+          {isRequestingGPS ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Mendeteksi Lokasi...
+            </>
+          ) : (
+            <>
+              <LocateFixed className="w-4 h-4" />
+              {gpsStatus === 'success' ? 'Perbarui Lokasi GPS' : 'Gunakan Lokasi GPS'}
+            </>
+          )}
         </button>
-      </div>
+      )}
 
       {/* INFO */}
-      <div className="text-xs text-gray-500 text-center space-y-1">
-        <p>
-          Status:{' '}
-          {gpsStatus === 'loading'
-            ? '⏳ Mendeteksi...'
-            : gpsStatus === 'success'
-            ? '✅ GPS Aktif'
-            : '⚠️ GPS Tidak Aktif'}
+      <div className="text-xs text-muted-foreground text-center space-y-1">
+        {!readonly && (
+          <p className="flex items-center justify-center gap-1">
+            <MapPin size={14} />
+            {gpsStatus === 'loading'
+              ? 'Mendeteksi lokasi...'
+              : gpsStatus === 'success'
+              ? 'GPS Aktif'
+              : 'GPS Tidak Aktif'}
+          </p>
+        )}
+        <p className="font-mono">
+          Koordinat: {displayLat.toFixed(6)}, {displayLng.toFixed(6)}
         </p>
-        <p>Koordinat: {displayLat.toFixed(6)}, {displayLng.toFixed(6)}</p>
+        {readonly && <p className="italic text-gray-400">Mode tampilan saja</p>}
       </div>
     </div>
   );

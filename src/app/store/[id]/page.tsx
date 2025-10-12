@@ -50,7 +50,7 @@ export default function PublicStorePage() {
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('id, name, price, image_url, categories(name)')
-        .eq('owner_id', storeId) // ⚠️ ganti sesuai foreign key kamu: owner_id / profile_id / store_id
+        .eq('owner_id', storeId)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
@@ -124,10 +124,12 @@ export default function PublicStorePage() {
         {store.latitude && store.longitude && (
           <div className="mt-4">
             <h2 className="text-lg font-semibold text-gray-700 mb-2">Lokasi Toko</h2>
+            {/* ✨ Tambahkan prop readonly={true} */}
             <StoreMap
               latitude={store.latitude}
               longitude={store.longitude}
               onLocationChange={() => {}}
+              readonly={true}
             />
             <p className="mt-2 text-sm text-gray-600">
               Koordinat:{' '}

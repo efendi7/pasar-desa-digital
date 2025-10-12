@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface Profile {
+  id?: string;
   store_name?: string;
   full_name?: string;
   whatsapp_number?: string;
@@ -41,11 +42,14 @@ export default function ProductDetailPage() {
   const params = useParams();
   const productId = params.id as string;
 
+  const hasLoadedRef = useRef(false);
+
   useEffect(() => {
-    if (productId) loadProduct();
+    if (!productId || hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+    loadProduct();
   }, [productId]);
 
-  // Fungsi untuk cek apakah user sudah view hari ini
   function hasViewedToday(productId: string): boolean {
     const viewsData = localStorage.getItem('product_views');
     if (!viewsData) return false;
@@ -53,20 +57,16 @@ export default function ProductDetailPage() {
     try {
       const views: Record<string, string> = JSON.parse(viewsData);
       const lastViewDate = views[productId];
-      
       if (!lastViewDate) return false;
 
-      // Cek apakah masih hari yang sama
       const today = new Date().toDateString();
       const lastView = new Date(lastViewDate).toDateString();
-      
       return today === lastView;
     } catch {
       return false;
     }
   }
 
-  // Fungsi untuk menyimpan view hari ini
   function markAsViewedToday(productId: string) {
     const viewsData = localStorage.getItem('product_views');
     let views: Record<string, string> = {};
@@ -89,7 +89,7 @@ export default function ProductDetailPage() {
     const { data: productData, error: productError } = await supabase
       .from('products')
       .select(
-        '*, profiles(full_name, store_name, store_description, whatsapp_number), categories(name, slug), image_url_1, image_url_2, image_url_3'
+        '*, profiles(id, full_name, store_name, store_description, whatsapp_number), categories(name, slug), image_url_1, image_url_2, image_url_3'
       )
       .eq('id', productId)
       .eq('is_active', true)
@@ -103,28 +103,12 @@ export default function ProductDetailPage() {
 
     setProduct(productData);
 
-    // ✅ Cek apakah sudah view hari ini
     const alreadyViewed = hasViewedToday(productId);
-    console.log('Already viewed today?', alreadyViewed);
-    
     if (!alreadyViewed) {
-      console.log('Incrementing views for product:', productId);
-      
-      // Increment views di database
-      const { data, error } = await supabase.rpc('increment_views', { product_id: productId });
-      
-      if (error) {
-        console.error('Error incrementing views:', error);
-      } else {
-        console.log('Views incremented successfully!');
-        // Simpan record bahwa sudah view hari ini
-        markAsViewedToday(productId);
-      }
-    } else {
-      console.log('Skip increment - already viewed today');
+      await supabase.rpc('increment_views', { product_id: productId });
+      markAsViewedToday(productId);
     }
 
-    // Produk serupa
     if (productData.category_id) {
       const { data: relatedData } = await supabase
         .from('products')
@@ -151,7 +135,6 @@ export default function ProductDetailPage() {
       : `62${product.profiles.whatsapp_number}`;
 
     const message = `Halo ${product.profiles.store_name || ''}, saya tertarik dengan produk *${product.name}* seharga Rp ${product.price.toLocaleString('id-ID')}. Apakah masih tersedia?`;
-
     const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   }
@@ -236,9 +219,16 @@ export default function ProductDetailPage() {
                 {product.profiles?.store_name?.charAt(0).toUpperCase() || "?"}
               </div>
               <div>
-                <p className="font-semibold text-gray-800">
-                  {product.profiles?.store_name || "Tidak tersedia"}
-                </p>
+                {product.profiles?.store_name ? (
+                  <Link
+                    href={`/store/${product.profiles.id}`}
+                    className="font-semibold text-green-700 hover:underline hover:text-green-800"
+                  >
+                    {product.profiles.store_name}
+                  </Link>
+                ) : (
+                  <p className="font-semibold text-gray-800">Tidak tersedia</p>
+                )}
                 <p className="text-sm text-gray-500">{product.profiles?.full_name || "-"}</p>
               </div>
             </div>
@@ -279,7 +269,9 @@ export default function ProductDetailPage() {
                   <h3 className="font-semibold text-gray-800 mb-1 line-clamp-2 group-hover:text-green-600">
                     {rp.name}
                   </h3>
-                  <p className="text-sm text-gray-500 mb-2">{rp.profiles?.store_name || "-"}</p>
+                  <p className="text-sm text-gray-500 mb-2">
+                    {rp.profiles?.store_name || "-"}
+                  </p>
                   <span className="text-lg font-bold text-green-600">
                     Rp {rp.price.toLocaleString('id-ID')}
                   </span>
