@@ -19,7 +19,7 @@ import {
   X,
   Store,
   ChevronDown,
-  UserCircle
+  User,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -30,22 +30,19 @@ export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCatOpen, setIsCatOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const supabase = createClient();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMounted(true);
     checkUser();
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [mounted]);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -61,7 +58,6 @@ export default function Navbar() {
   async function checkUser() {
     const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
-
     if (user) {
       const { data: profileData } = await supabase
         .from('profiles')
@@ -90,29 +86,24 @@ export default function Navbar() {
     { name: 'Lainnya', slug: 'lainnya', icon: Package },
   ];
 
-  if (!mounted) {
-    return (
-      <nav className="sticky top-0 z-50 bg-white shadow-md h-20 flex items-center justify-center">
-        <div className="text-lg font-semibold text-green-600">Kebumify</div>
-      </nav>
-    );
-  }
-
   return (
     <nav
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-white/90 backdrop-blur-md shadow-md' : 'bg-white shadow-sm'
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-white/95 backdrop-blur-xl shadow-lg'
+          : 'bg-white/80 backdrop-blur-2xl shadow-md'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3">
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center text-white shadow-md"
+              whileTap={{ scale: 0.95 }}
+              className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center text-white shadow-md"
             >
-              <Store className="w-6 h-6" />
+              <Store className="w-5 h-5 sm:w-6 sm:h-6" />
             </motion.div>
             <div className="hidden sm:block">
               <div className="text-xl bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent font-semibold">
@@ -122,13 +113,18 @@ export default function Navbar() {
                 Etalase Digital UMKM Desa
               </div>
             </div>
+            <div className="sm:hidden">
+              <div className="text-lg bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent font-semibold">
+                Kebumify
+              </div>
+            </div>
           </Link>
 
           {/* Desktop menu */}
           <div className="hidden lg:flex items-center gap-2">
             <Link
               href="/"
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 isActive('/')
                   ? 'text-green-600 bg-green-50'
                   : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
@@ -139,7 +135,7 @@ export default function Navbar() {
 
             <Link
               href="/products"
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 isActive('/products')
                   ? 'text-green-600 bg-green-50'
                   : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
@@ -148,26 +144,28 @@ export default function Navbar() {
               Produk
             </Link>
 
-            {/* Dropdown kategori dengan animasi */}
+            {/* Dropdown kategori */}
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsCatOpen(!isCatOpen)}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50 rounded-lg transition"
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50 rounded-lg transition-all"
               >
                 Kategori
                 <ChevronDown
-                  className={`w-4 h-4 transition-transform ${isCatOpen ? 'rotate-180 text-green-600' : ''}`}
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    isCatOpen ? 'rotate-180 text-green-600' : ''
+                  }`}
                 />
               </button>
 
               <AnimatePresence>
                 {isCatOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute top-full left-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden"
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden"
                   >
                     {categories.map((cat) => {
                       const Icon = cat.icon;
@@ -175,10 +173,13 @@ export default function Navbar() {
                         <Link
                           key={cat.slug}
                           href={`/category/${cat.slug}`}
-                          className="flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 transition-colors"
+                          onClick={() => setIsCatOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors group"
                         >
-                          <Icon className="w-5 h-5 text-green-600" />
-                          <span className="text-sm text-gray-700">{cat.name}</span>
+                          <Icon className="w-5 h-5 text-green-600 group-hover:scale-110 transition-transform" />
+                          <span className="text-sm text-gray-700 group-hover:text-green-700 font-medium">
+                            {cat.name}
+                          </span>
                         </Link>
                       );
                     })}
@@ -188,215 +189,271 @@ export default function Navbar() {
             </div>
           </div>
 
-         {/* User Profile / Login */}
-<div className="hidden lg:flex items-center gap-3">
-  {user ? (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-green-300 bg-white hover:bg-green-50 transition"
-      >
-        {profile?.avatar_url ? (
-  <img
-    src={profile.avatar_url}
-    alt="Avatar"
-    className="w-8 h-8 rounded-full object-cover border border-green-200 shadow-sm"
-    onError={(e) => (e.currentTarget.style.display = 'none')}
-  />
-) : (
-  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-semibold shadow-sm">
-    {profile?.store_name?.charAt(0)?.toUpperCase() || 'U'}
-  </div>
-)}
+          {/* Desktop Profile / Auth */}
+          <div className="hidden lg:flex items-center gap-3">
+            {user ? (
+              <div className="relative" ref={dropdownRef}>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-green-300 bg-white hover:bg-green-50 transition-all shadow-sm hover:shadow"
+                >
+                  {profile?.avatar_url ? (
+                    <img
+                      src={profile.avatar_url}
+                      alt="Avatar"
+                      className="w-8 h-8 rounded-full object-cover border-2 border-green-200 shadow-sm"
+                      onError={(e) => (e.currentTarget.style.display = 'none')}
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center text-green-700 font-semibold shadow-sm">
+                      {profile?.store_name?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                  )}
+                  <span className="text-sm font-medium text-gray-800">
+                    {profile?.store_name || 'Toko Saya'}
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+                      isDropdownOpen ? 'rotate-180 text-green-600' : ''
+                    }`}
+                  />
+                </motion.button>
 
-        {/* Store name */}
-        <span className="text-sm font-medium text-gray-800">
-          {profile?.store_name || 'Toko Saya'}
-        </span>
+                <AnimatePresence>
+                  {isDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden"
+                    >
+                      <Link
+                        href="/dashboard"
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors group"
+                      >
+                        <BarChart3 className="w-5 h-5 text-green-600 group-hover:scale-110 transition-transform" />
+                        <span className="text-sm text-gray-700 group-hover:text-green-700 font-medium">
+                          Toko Saya
+                        </span>
+                      </Link>
+                      <Link
+                        href="/dashboard/products"
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors group"
+                      >
+                        <Boxes className="w-5 h-5 text-green-600 group-hover:scale-110 transition-transform" />
+                        <span className="text-sm text-gray-700 group-hover:text-green-700 font-medium">
+                          Produk Saya
+                        </span>
+                      </Link>
+                      <Link
+                        href="/dashboard/profile"
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors group"
+                      >
+                        <Settings className="w-5 h-5 text-green-600 group-hover:scale-110 transition-transform" />
+                        <span className="text-sm text-gray-700 group-hover:text-green-700 font-medium">
+                          Edit Toko
+                        </span>
+                      </Link>
+                      <div className="h-px bg-gray-100 my-1" />
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors group"
+                      >
+                        <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        <span className="text-sm font-medium">Keluar Akun</span>
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/login"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-green-600 transition-colors"
+                >
+                  Masuk
+                </Link>
+                <Link
+                  href="/register"
+                  className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white text-sm font-medium rounded-lg hover:from-green-700 hover:to-green-800 shadow-md hover:shadow-lg transition-all"
+                >
+                  Daftar Toko
+                </Link>
+              </div>
+            )}
+          </div>
 
-        <ChevronDown
-          className={`w-4 h-4 text-gray-500 transition-transform ${
-            isDropdownOpen ? 'rotate-180 text-green-600' : ''
-          }`}
-        />
-      </button>
-
-      {/* Dropdown */}
-      <AnimatePresence>
-        {isDropdownOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-            className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden"
-          >
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 transition"
+          {/* Mobile: Avatar/Auth + Menu Toggle */}
+          <div className="lg:hidden flex items-center gap-2">
+            {user && (
+              <Link href="/dashboard/profile" className="flex items-center gap-2">
+                {profile?.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt="Avatar"
+                    className="w-8 h-8 rounded-full object-cover border-2 border-green-200 shadow-sm"
+                    onError={(e) => (e.currentTarget.style.display = 'none')}
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center text-green-700 font-semibold text-xs shadow-sm">
+                    {profile?.store_name?.charAt(0)?.toUpperCase() || 'U'}
+                  </div>
+                )}
+                <span className="text-sm font-medium text-gray-800 max-w-[80px] truncate">
+                  {profile?.store_name || 'Toko'}
+                </span>
+              </Link>
+            )}
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              <BarChart3 className="w-5 h-5 text-green-600" />
-              Dashboard
-            </Link>
-            <Link
-              href="/dashboard/products"
-              className="flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 transition"
-            >
-              <Boxes className="w-5 h-5 text-green-600" />
-              Produk Saya
-            </Link>
-            <Link
-              href="/dashboard/profile"
-              className="flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 transition"
-            >
-              <Settings className="w-5 h-5 text-green-600" />
-              Pengaturan
-            </Link>
-            <div className="h-px bg-gray-100 my-1" />
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-red-600 hover:bg-red-50 transition"
-            >
-              <LogOut className="w-5 h-5" />
-              Keluar
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  ) : (
-    <div className="flex items-center gap-2">
-      <Link
-        href="/login"
-        className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-green-600 transition"
-      >
-        Masuk
-      </Link>
-      <Link
-        href="/register"
-        className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white text-sm font-medium rounded-lg hover:from-green-700 hover:to-green-800 shadow-sm transition"
-      >
-        Daftar Toko
-      </Link>
-    </div>
-  )}
-</div>
-
-
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="lg:hidden p-2.5 rounded-lg hover:bg-gray-100 transition"
-          >
-            {isMenuOpen ? <X className="w-6 h-6 text-gray-700" /> : <Menu className="w-6 h-6 text-gray-700" />}
-          </button>
+              {isMenuOpen ? (
+                <X className="w-6 h-6 text-gray-700" />
+              ) : (
+                <Menu className="w-6 h-6 text-gray-700" />
+              )}
+            </motion.button>
+          </div>
         </div>
 
-        {/* Mobile dropdown */}
+        {/* Mobile Menu */}
         <AnimatePresence>
           {isMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.25 }}
-              className="lg:hidden border-t border-gray-100 py-3 space-y-1"
+              className="lg:hidden border-t border-gray-100 overflow-hidden"
             >
-              <Link
-                href="/"
-                onClick={() => setIsMenuOpen(false)}
-                className={`block px-4 py-2.5 rounded-lg text-sm font-medium ${
-                  isActive('/') ? 'text-green-600 bg-green-50' : 'text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                Beranda
-              </Link>
-              <Link
-                href="/products"
-                onClick={() => setIsMenuOpen(false)}
-                className={`block px-4 py-2.5 rounded-lg text-sm font-medium ${
-                  isActive('/products') ? 'text-green-600 bg-green-50' : 'text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                Produk
-              </Link>
+              <div className="py-4 space-y-1 bg-white/95 backdrop-blur-md">
+                <Link
+                  href="/"
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    isActive('/')
+                      ? 'text-green-600 bg-green-50'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Beranda
+                </Link>
+                <Link
+                  href="/products"
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    isActive('/products')
+                      ? 'text-green-600 bg-green-50'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Produk
+                </Link>
 
-              <div className="pt-3 pb-1 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Kategori
-              </div>
-
-              {categories.map((cat) => {
-                const Icon = cat.icon;
-                return (
-                  <Link
-                    key={cat.slug}
-                    href={`/category/${cat.slug}`}
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-700 transition"
-                  >
-                    <Icon className="w-5 h-5 text-green-600" />
-                    {cat.name}
-                  </Link>
-                );
-              })}
-
-              <div className="h-px bg-gray-100 my-3" />
-
-              {user ? (
-                <>
-                  <div className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    {profile?.store_name || 'Akun Saya'}
+                <div className="pt-4 pb-2 px-4">
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                    Kategori
                   </div>
-                  <Link
-                    href="/dashboard"
-                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 rounded-lg transition"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <BarChart3 className="w-5 h-5 text-green-600" />
-                    Dashboard
-                  </Link>
-                  <Link
-                    href="/dashboard/products"
-                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 rounded-lg transition"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Boxes className="w-5 h-5 text-green-600" />
-                    Produk Saya
-                  </Link>
-                  <Link
-                    href="/dashboard/profile"
-                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 rounded-lg transition"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Settings className="w-5 h-5 text-green-600" />
-                    Pengaturan
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 w-full px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-lg transition"
-                  >
-                    <LogOut className="w-5 h-5" />
-                    Keluar
-                  </button>
-                </>
-              ) : (
-                <div className="space-y-2 pt-2">
-                  <Link
-                    href="/login"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="block text-center px-4 py-2.5 text-sm font-medium border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-                  >
-                    Masuk
-                  </Link>
-                  <Link
-                    href="/register"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="block text-center px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white text-sm font-medium rounded-lg hover:from-green-700 hover:to-green-800 transition"
-                  >
-                    Daftar Toko
-                  </Link>
+                  
+                  {/* Grid Layout untuk Kategori - 2 Kolom */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {categories.map((cat) => {
+                      const Icon = cat.icon;
+                      return (
+                        <Link
+                          key={cat.slug}
+                          href={`/category/${cat.slug}`}
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-100 hover:border-green-300 hover:bg-green-50 transition-all group"
+                        >
+                          <Icon className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform" />
+                          <span className="text-xs font-medium text-gray-700 group-hover:text-green-700 text-center">
+                            {cat.name}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
-              )}
+
+                <div className="h-px bg-gray-100 my-3" />
+
+                {user ? (
+                  <div className="px-4">
+                    <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                      Menu Akun
+                    </div>
+                    {/* Grid 2 Kolom untuk Menu Dashboard */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-100 hover:border-green-300 hover:bg-green-50 transition-all group"
+                      >
+                        <BarChart3 className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-medium text-gray-700 group-hover:text-green-700 text-center">
+                          Dashboard
+                        </span>
+                      </Link>
+                      
+                      <Link
+                        href="/dashboard/products"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-100 hover:border-green-300 hover:bg-green-50 transition-all group"
+                      >
+                        <Boxes className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-medium text-gray-700 group-hover:text-green-700 text-center">
+                          Produk Saya
+                        </span>
+                      </Link>
+                      
+                      <Link
+                        href="/dashboard/profile"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-100 hover:border-green-300 hover:bg-green-50 transition-all group"
+                      >
+                        <Settings className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-medium text-gray-700 group-hover:text-green-700 text-center">
+                          Pengaturan
+                        </span>
+                      </Link>
+                      
+                      <button
+                        onClick={handleLogout}
+                        className="flex flex-col items-center gap-2 p-3 rounded-lg border border-red-100 hover:border-red-300 hover:bg-red-50 transition-all group"
+                      >
+                        <LogOut className="w-6 h-6 text-red-600 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-medium text-red-600 text-center">
+                          Keluar
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 px-4 pt-2">
+                    <Link
+                      href="/login"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="block text-center px-4 py-3 text-sm font-medium border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Masuk
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="block text-center px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white text-sm font-medium rounded-lg hover:from-green-700 hover:to-green-800 shadow-md transition-all"
+                    >
+                      Daftar Toko
+                    </Link>
+                  </div>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

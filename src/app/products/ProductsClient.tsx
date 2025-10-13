@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Loader2, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 // --- Skeleton & Pagination ---
 function ProductCardSkeleton() {
@@ -135,7 +135,8 @@ export default function ProductsClient({
       updateURL(1, selectedCategory, debouncedSearch);
     }, 300);
     return () => clearTimeout(timer);
-  }, [selectedCategory, debouncedSearch, products]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory, debouncedSearch]);
 
   function filterProducts() {
     let filtered = products;
@@ -185,7 +186,7 @@ export default function ProductsClient({
   const endItem = Math.min(endIndex, filteredProducts.length);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0">
       {/* Breadcrumb */}
       <nav className="mb-6 text-sm">
         <ol className="flex items-center gap-2 text-gray-600">
@@ -199,8 +200,9 @@ export default function ProductsClient({
         </ol>
       </nav>
 
-      {/* Header - Selaras dengan Add Product */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-8">
+      {/* Header & Filter Section - Menyatu */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-8 relative">
+        {/* Header */}
         <div className="bg-gradient-to-r from-green-50 to-green-100/50 px-8 py-6 border-b border-green-200">
           <h1 className="text-3xl font-bold text-gray-900">
             Katalog Produk
@@ -209,37 +211,39 @@ export default function ProductsClient({
             Temukan produk UMKM terbaik dari desa
           </p>
         </div>
-      </div>
 
-      {/* Filter Section */}
-      <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 mb-8">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari produk atau toko (min. 3 karakter)..."
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition"
-            />
-            {searchWarning && (
-              <p className="text-xs text-orange-600 mt-1">⚠️ {searchWarning}</p>
-            )}
-          </div>
-          <div className="md:w-64">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition"
-            >
-              <option value="all">Semua Kategori</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.slug}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+        {/* Filter Section */}
+        <div className="p-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari produk atau toko (min. 3 karakter)..."
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+                suppressHydrationWarning
+              />
+              {searchWarning && (
+                <p className="text-xs text-orange-600 mt-1">⚠️ {searchWarning}</p>
+              )}
+            </div>
+            <div className="md:w-64">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+                suppressHydrationWarning
+              >
+                <option value="all">Semua Kategori</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.slug}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -278,6 +282,7 @@ export default function ProductsClient({
               setCurrentPage(1);
             }}
             className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+            suppressHydrationWarning
           >
             Reset Filter
           </button>
@@ -338,4 +343,3 @@ export default function ProductsClient({
     </div>
   );
 }
-  

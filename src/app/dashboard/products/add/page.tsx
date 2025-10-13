@@ -1,9 +1,19 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Upload, X, ImagePlus, Loader2 } from 'lucide-react';
+import {
+  Upload,
+  X,
+  ImagePlus,
+  Loader2,
+  Home,
+  Package,
+} from 'lucide-react';
+import { Breadcrumb } from '@/components/Breadcrumb';
+import { PageHeader } from '@/components/PageHeader';
 
 interface ImageSlot {
   file: File | null;
@@ -34,7 +44,9 @@ export default function AddProductPage() {
   }, []);
 
   async function checkUserAndLoadCategories() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       router.push('/login');
       return;
@@ -52,7 +64,6 @@ export default function AddProductPage() {
   function handleImageChange(index: number, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('Ukuran file maksimal 5MB');
         return;
@@ -90,7 +101,6 @@ export default function AddProductPage() {
     try {
       const imageUrls: (string | null)[] = [null, null, null, null];
 
-      // Upload images in parallel for faster performance
       const uploadPromises = imageSlots.map(async (slot, index) => {
         if (slot.file) {
           const fileExt = slot.file.name.split('.').pop();
@@ -112,21 +122,18 @@ export default function AddProductPage() {
 
       await Promise.all(uploadPromises);
 
-      // Insert product
-      const { error: insertError } = await supabase
-        .from('products')
-        .insert({
-          owner_id: userId,
-          name,
-          description,
-          price: parseFloat(price),
-          category_id: categoryId || null,
-          image_url: imageUrls[0],
-          image_url_1: imageUrls[1],
-          image_url_2: imageUrls[2],
-          image_url_3: imageUrls[3],
-          is_active: true,
-        });
+      const { error: insertError } = await supabase.from('products').insert({
+        owner_id: userId,
+        name,
+        description,
+        price: parseFloat(price),
+        category_id: categoryId || null,
+        image_url: imageUrls[0],
+        image_url_1: imageUrls[1],
+        image_url_2: imageUrls[2],
+        image_url_3: imageUrls[3],
+        is_active: true,
+      });
 
       if (insertError) throw insertError;
 
@@ -140,28 +147,24 @@ export default function AddProductPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Back Button */}
-      <Link
-        href="/dashboard/products"
-        className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 mb-6 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        <span className="font-medium">Kembali ke Daftar Produk</span>
-      </Link>
+      {/* ✅ Breadcrumb Komponen */}
+      <Breadcrumb
+        items={[
+          { href: '/dashboard', label: 'Beranda', icon: <Home className="w-4 h-4 mr-1" /> },
+          { href: '/dashboard/products', label: 'Daftar Produk', icon: <Package className="w-4 h-4 mr-1" /> },
+          { label: 'Tambah Produk' },
+        ]}
+      />
 
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-green-50 to-green-100/50 px-8 py-6 border-b border-green-200">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Tambah Produk Baru
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Lengkapi informasi produk Anda
-          </p>
-        </div>
+        {/* ✅ Page Header Komponen */}
+        <PageHeader
+          title="Tambah Produk Baru"
+          subtitle="Lengkapi informasi produk Anda"
+        />
 
         <form onSubmit={handleSubmit} className="p-8 space-y-8">
-          {/* Image Upload Section - 4 Slots */}
+          {/* Foto Produk */}
           <div>
             <label className="block text-base font-semibold text-gray-900 mb-4">
               Foto Produk <span className="text-red-500">*</span>
@@ -224,7 +227,7 @@ export default function AddProductPage() {
             </p>
           </div>
 
-          {/* Product Name */}
+          {/* Nama Produk */}
           <div>
             <label className="block text-base font-semibold text-gray-900 mb-2">
               Nama Produk <span className="text-red-500">*</span>
@@ -239,13 +242,10 @@ export default function AddProductPage() {
             />
           </div>
 
-          {/* Category & Price Row */}
+          {/* Kategori & Harga */}
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Category */}
             <div>
-              <label className="block text-base font-semibold text-gray-900 mb-2">
-                Kategori
-              </label>
+              <label className="block text-base font-semibold text-gray-900 mb-2">Kategori</label>
               <select
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
@@ -260,7 +260,6 @@ export default function AddProductPage() {
               </select>
             </div>
 
-            {/* Price */}
             <div>
               <label className="block text-base font-semibold text-gray-900 mb-2">
                 Harga (Rp) <span className="text-red-500">*</span>
@@ -278,7 +277,7 @@ export default function AddProductPage() {
             </div>
           </div>
 
-          {/* Description */}
+          {/* Deskripsi */}
           <div>
             <label className="block text-base font-semibold text-gray-900 mb-2">
               Deskripsi Produk
@@ -292,7 +291,7 @@ export default function AddProductPage() {
             />
           </div>
 
-          {/* Error Message */}
+          {/* Error */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
               <span className="text-lg">⚠️</span>
@@ -300,7 +299,7 @@ export default function AddProductPage() {
             </div>
           )}
 
-          {/* Submit Buttons */}
+          {/* Tombol Aksi */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <button
               type="submit"
@@ -319,6 +318,7 @@ export default function AddProductPage() {
                 </>
               )}
             </button>
+
             <Link
               href="/dashboard/products"
               className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 font-semibold text-center transition-all duration-200"
