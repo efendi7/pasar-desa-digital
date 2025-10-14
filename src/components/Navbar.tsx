@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import { useAdmin } from '@/hooks/useAdmin';
 import {
   UtensilsCrossed,
   Coffee,
@@ -20,6 +21,7 @@ import {
   Store,
   ChevronDown,
   User,
+  Shield,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -33,6 +35,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const supabase = createClient();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { isAdmin } = useAdmin();
 
   useEffect(() => {
     checkUser();
@@ -187,6 +190,21 @@ export default function Navbar() {
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Admin Link - Desktop */}
+            {isAdmin && (
+              <Link
+                href="/admin/dashboard"
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  pathname?.startsWith('/admin')
+                    ? 'text-purple-600 bg-purple-50'
+                    : 'text-purple-600 hover:bg-purple-50'
+                }`}
+              >
+                <Shield className="w-4 h-4" />
+                Admin Panel
+              </Link>
+            )}
           </div>
 
           {/* Desktop Profile / Auth */}
@@ -257,6 +275,23 @@ export default function Navbar() {
                           Edit Toko
                         </span>
                       </Link>
+                      
+                      {/* Admin Link in Dropdown */}
+                      {isAdmin && (
+                        <>
+                          <div className="h-px bg-gray-100 my-1" />
+                          <Link
+                            href="/admin/dashboard"
+                            className="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 transition-colors group"
+                          >
+                            <Shield className="w-5 h-5 text-purple-600 group-hover:scale-110 transition-transform" />
+                            <span className="text-sm text-purple-700 group-hover:text-purple-800 font-medium">
+                              Admin Panel
+                            </span>
+                          </Link>
+                        </>
+                      )}
+                      
                       <div className="h-px bg-gray-100 my-1" />
                       <button
                         onClick={handleLogout}
@@ -423,6 +458,20 @@ export default function Navbar() {
                           Pengaturan
                         </span>
                       </Link>
+                      
+                      {/* Admin Link - Mobile */}
+                      {isAdmin && (
+                        <Link
+                          href="/admin/dashboard"
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex flex-col items-center gap-2 p-3 rounded-lg border border-purple-100 hover:border-purple-300 hover:bg-purple-50 transition-all group"
+                        >
+                          <Shield className="w-6 h-6 text-purple-600 group-hover:scale-110 transition-transform" />
+                          <span className="text-xs font-medium text-purple-600 text-center">
+                            Admin Panel
+                          </span>
+                        </Link>
+                      )}
                       
                       <button
                         onClick={handleLogout}
