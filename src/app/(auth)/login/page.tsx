@@ -1,100 +1,138 @@
 'use client';
-import type { FC } from 'react';
-import { useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
-const LoginPage: FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+import { useState, useEffect, FormEvent } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { createClient } from '@/utils/supabase/client';
+import { LogIn, Mail, Lock } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
+import { FormInput } from '@/components/FormInput';
+import { PrimaryButton } from '@/components/PrimaryButton';
+import { SecondaryButton } from '@/components/SecondaryButton';
+
+export default function LoginPage() {
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [info, setInfo] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('verified')) {
+      supabase.auth.signOut(); // hapus session otomatis Supabase
+      setInfo('✅ Email Anda sudah diverifikasi. Silakan login.');
+    }
+  }, [searchParams, supabase]);
+
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    setLoading(true);
 
-    // 1️⃣ Login ke Supabase Auth
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
-      setError(error.message);
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
       return;
     }
 
-    // 2️⃣ Ambil profil user dari tabel profiles
-    const user = data.user;
-    if (user) {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_active')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) {
-        console.error(profileError);
-        setError('Gagal memeriksa status akun.');
-        return;
-      }
-
-      // 3️⃣ Arahkan berdasarkan status approval
-      if (profile?.is_active) {
-        router.push('/dashboard');
-      } else {
-        router.push('/waiting-approval');
-      }
-
-      router.refresh();
+    if (!authData.user) {
+      setError('User tidak ditemukan');
+      setLoading(false);
+      return;
     }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('is_active')
+      .eq('id', authData.user.id)
+      .single();
+
+    if (profileError) {
+      setError('Gagal memeriksa status akun');
+      setLoading(false);
+      return;
+    }
+
+    if (profile?.is_active) router.push('/dashboard');
+    else router.push('/waiting-approval');
+
+    router.refresh();
   };
 
   return (
-    <div className="flex justify-center items-center mt-10">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold text-center text-gray-800">Login UMKM</h1>
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-3 py-2 mt-1 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-3 py-2 mt-1 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
-            />
-          </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          <button
+    <div className="max-w-md mx-auto px-4 pt-10 pb-16">
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
+        <PageHeader
+          title="Login UMKM"
+          subtitle="Masuk ke akun Anda untuk mengelola produk dan penjualan"
+        />
+
+        <form onSubmit={handleLogin} className="p-8 space-y-6">
+          {info && (
+            <div className="bg-green-50 border text-green-700 px-4 py-3 rounded-xl">
+              {info}
+            </div>
+          )}
+
+          <FormInput
+            label="Email"
+            type="email"
+            icon={<Mail className="w-5 h-5 text-gray-400" />}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+
+          <FormInput
+            label="Password"
+            type="password"
+            icon={<Lock className="w-5 h-5 text-gray-400" />}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          {error && (
+            <div className="bg-red-50 border text-red-700 px-4 py-3 rounded-xl">
+              ⚠️ {error}
+            </div>
+          )}
+
+          <PrimaryButton
             type="submit"
-            className="w-full py-2 px-4 text-white bg-green-600 rounded-md hover:bg-green-700"
+            loading={loading}
+            icon={<LogIn className="w-5 h-5" />}
+            className="w-full"
           >
-            Login
-          </button>
+            Masuk
+          </PrimaryButton>
+
+          <div className="text-sm text-center text-gray-600">
+            Belum punya akun?{' '}
+            <Link
+              href="/register"
+              className="font-medium text-green-600 hover:underline"
+            >
+              Daftar di sini
+            </Link>
+          </div>
         </form>
-        <p className="text-sm text-center text-gray-600">
-          Belum punya akun?{' '}
-          <Link href="/register" className="font-medium text-green-600 hover:underline">
-            Daftar di sini
-          </Link>
-        </p>
+
+        <div className="p-6 border-t text-center">
+          <SecondaryButton href="/" className="w-full">
+            Kembali ke Beranda
+          </SecondaryButton>
+        </div>
       </div>
     </div>
   );
-};
-
-export default LoginPage;
+}

@@ -1,11 +1,13 @@
-import Link from "next/link";
-import { ReactNode } from "react";
+'use client';
+
+import { ReactNode } from 'react';
 
 interface PageHeaderProps {
   title: string;
   subtitle?: string;
   count?: number;
   actionButton?: ReactNode;
+  icon?: ReactNode; // Added to support icon prop used in AdminDashboard
   gradientFrom?: string;
   gradientTo?: string;
 }
@@ -15,8 +17,9 @@ export const PageHeader = ({
   subtitle,
   count,
   actionButton,
-  gradientFrom = "from-green-50",
-  gradientTo = "to-green-100/50",
+  icon,
+  gradientFrom = 'from-green-50',
+  gradientTo = 'to-green-100/50',
 }: PageHeaderProps) => {
   return (
     <div
@@ -24,7 +27,10 @@ export const PageHeader = ({
     >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+            {icon}
+            {title}
+          </h1>
           {subtitle && <p className="text-gray-600 mt-1">{subtitle}</p>}
           {count !== undefined && (
             <p className="text-gray-600 mt-1">Total {count} item</p>

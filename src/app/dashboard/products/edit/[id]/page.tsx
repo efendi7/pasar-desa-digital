@@ -89,7 +89,7 @@ export default function EditProductPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 pt-4 pb-8">
-      {/* 🧭 Breadcrumb */}
+      {/* Breadcrumb */}
       <Breadcrumb
         items={[
           { href: '/dashboard', label: 'Beranda', icon: <Home className="w-4 h-4 mr-1" /> },

@@ -1,156 +1,84 @@
-'use client';
+import { Suspense } from 'react';
+import { createClient } from '@/utils/supabase/server';
+import { redirect } from 'next/navigation';
+import AdminDashboardClient from './AdminDashboardClient';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { createClient } from '@/utils/supabase/client';
-import { useAdmin } from '@/hooks/useAdmin';
-
-interface Stats {
-  totalUsers: number;
-  totalProducts: number;
-  totalCategories: number;
-  activeProducts: number;
-}
-
-export default function AdminDashboard() {
-  const router = useRouter();
-  const { isAdmin, loading } = useAdmin();
+async function AdminDashboardPage() {
   const supabase = createClient();
-  const [stats, setStats] = useState<Stats>({
-    totalUsers: 0,
-    totalProducts: 0,
-    totalCategories: 0,
-    activeProducts: 0,
-  });
-  const [loadingStats, setLoadingStats] = useState(true);
 
-  useEffect(() => {
-    if (!loading && !isAdmin) {
-      router.push('/');
-    }
-  }, [isAdmin, loading, router]);
+  // Check authentication
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    redirect('/login');
+  }
 
-  useEffect(() => {
-    if (isAdmin) {
-      fetchStats();
-    }
-  }, [isAdmin]);
+  // Check if user is admin
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
 
-  const fetchStats = async () => {
-    try {
-      // Get total users
-      const { count: usersCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+  if (profile?.role !== 'admin') {
+    redirect('/');
+  }
 
-      // Get total products
-      const { count: productsCount } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true });
+  // Fetch all stats in parallel
+  const [
+    { count: usersCount },
+    { count: productsCount },
+    { count: activeCount },
+    { count: categoriesCount },
+    { data: productsData },
+    { data: activeStoresData },
+  ] = await Promise.all([
+    supabase.from('profiles').select('*', { count: 'exact', head: true }),
+    supabase.from('products').select('*', { count: 'exact', head: true }),
+    supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
+    supabase.from('categories').select('*', { count: 'exact', head: true }),
+    supabase.from('products').select('views'),
+    supabase.from('profiles').select('id').eq('is_active', true),
+  ]);
 
-      // Get active products
-      const { count: activeCount } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_active', true);
+  const totalViews = productsData?.reduce((sum, product) => sum + (product.views || 0), 0) || 0;
 
-      // Get total categories
-      const { count: categoriesCount } = await supabase
-        .from('categories')
-        .select('*', { count: 'exact', head: true });
+  // Calculate active stores
+  let activeStoresCount = 0;
+  if (activeStoresData) {
+    const storesWithProducts = await Promise.all(
+      activeStoresData.map(async (profile) => {
+        const { count } = await supabase
+          .from('products')
+          .select('*', { count: 'exact', head: true })
+          .eq('owner_id', profile.id);
+        return count && count > 0 ? 1 : 0;
+      })
+    );
+    activeStoresCount = storesWithProducts.reduce((sum: number, val) => sum + val, 0);
+  }
 
-      setStats({
-        totalUsers: usersCount || 0,
-        totalProducts: productsCount || 0,
-        totalCategories: categoriesCount || 0,
-        activeProducts: activeCount || 0,
-      });
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    } finally {
-      setLoadingStats(false);
-    }
+  const stats = {
+    totalUsers: usersCount || 0,
+    totalProducts: productsCount || 0,
+    totalCategories: categoriesCount || 0,
+    activeProducts: activeCount || 0,
+    totalViews,
+    activeStores: activeStoresCount,
   };
 
-  if (loading || loadingStats) {
-    return (
+  return (
+    <Suspense fallback={
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return null;
-  }
-
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-gray-500 text-sm font-medium">Total Users</div>
-          <div className="text-3xl font-bold text-gray-900 mt-2">
-            {stats.totalUsers}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-gray-500 text-sm font-medium">Total Products</div>
-          <div className="text-3xl font-bold text-gray-900 mt-2">
-            {stats.totalProducts}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-gray-500 text-sm font-medium">Active Products</div>
-          <div className="text-3xl font-bold text-green-600 mt-2">
-            {stats.activeProducts}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-gray-500 text-sm font-medium">Categories</div>
-          <div className="text-3xl font-bold text-gray-900 mt-2">
-            {stats.totalCategories}
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            onClick={() => router.push('/admin/users')}
-            className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition"
-          >
-            <div className="text-lg font-semibold">Manage Users</div>
-            <div className="text-sm text-gray-600">View and manage all users</div>
-          </button>
-
-          <button
-            onClick={() => router.push('/admin/products')}
-            className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition"
-          >
-            <div className="text-lg font-semibold">Manage Products</div>
-            <div className="text-sm text-gray-600">View and manage all products</div>
-          </button>
-
-          <button
-            onClick={() => router.push('/admin/categories')}
-            className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition"
-          >
-            <div className="text-lg font-semibold">Manage Categories</div>
-            <div className="text-sm text-gray-600">Add or edit categories</div>
-          </button>
-        </div>
-      </div>
-    </div>
+    }>
+      <AdminDashboardClient initialStats={stats} />
+    </Suspense>
   );
 }
+
+export default AdminDashboardPage;

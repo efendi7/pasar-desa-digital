@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Eye, Store, Package, Edit } from "lucide-react";
+import React from "react";
 
 interface ProductCardProps {
   product: any;
@@ -10,6 +11,7 @@ interface ProductCardProps {
   showStore?: boolean; // untuk tampilkan nama toko
   profileName?: string; // nama toko (dari profil dashboard)
   index?: number; // animasi delay
+  children?: React.ReactNode; // ✅ Tambahkan ini supaya bisa kirim toggle dari luar
 }
 
 export const ProductCard = ({
@@ -18,6 +20,7 @@ export const ProductCard = ({
   showStore = true,
   profileName,
   index = 0,
+  children, // ✅ Tambahkan ini
 }: ProductCardProps) => {
   return (
     <motion.div
@@ -72,6 +75,9 @@ export const ProductCard = ({
             <span>{product.views || 0}</span>
           </div>
         </div>
+
+        {/* ✅ Tambahkan toggle atau konten tambahan di bawah harga */}
+        {children && <div className="pt-3">{children}</div>}
 
         {/* Tombol (jika di dashboard) */}
         {showEdit && (

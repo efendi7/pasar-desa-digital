@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
 
         {/* ✅ Tambahkan padding-top setara tinggi navbar */}
-        <div className="pt-16 min-h-screen">
+        <div className="pt-20 min-h-screen">
           <main className="container mx-auto px-4 pb-8">
             {children}
           </main>

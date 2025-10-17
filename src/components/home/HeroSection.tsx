@@ -1,10 +1,22 @@
 "use client";
 
-import { ShoppingCart, Store, Package, Eye, TrendingUp, TrendingDown } from "lucide-react";
-import React, { useEffect } from "react";
+import {
+  ShoppingCart,
+  Store,
+  Package,
+  Eye,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
+import React, { useEffect, useRef } from "react";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
-import { motion, useInView, useMotionValue, useTransform, animate } from "framer-motion";
-import { useRef } from "react";
+import {
+  motion,
+  useInView,
+  useMotionValue,
+  useTransform,
+  animate,
+} from "framer-motion";
 
 interface Stats {
   umkm: number;
@@ -28,7 +40,9 @@ const productImages = {
 const AnimatedCounter = ({ value }: { value: number }) => {
   const ref = useRef<HTMLSpanElement>(null);
   const count = useMotionValue(0);
-  const rounded = useTransform(count, (latest) => Math.floor(latest).toLocaleString("id-ID"));
+  const rounded = useTransform(count, (latest) =>
+    Math.floor(latest).toLocaleString("id-ID")
+  );
   const isInView = useInView(ref, { once: true });
 
   useEffect(() => {
@@ -104,10 +118,7 @@ export const HeroSection = ({ stats }: HeroSectionProps) => {
               {statsData.map((stat) => {
                 const Icon = stat.icon;
                 return (
-                  <div
-                    key={stat.label}
-                    className="group flex items-center gap-3"
-                  >
+                  <div key={stat.label} className="group flex items-center gap-3">
                     <div
                       className={`w-12 h-12 ${stat.bgColor} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}
                     >
@@ -165,55 +176,60 @@ export const HeroSection = ({ stats }: HeroSectionProps) => {
                 ))}
               </div>
 
-             {/* Lencana floating dinamis */}
-<div
-  className={`absolute -top-5 -right-5 px-6 py-3 rounded-2xl shadow-xl transform rotate-3
-  ${
-    stats.trend > 0
-      ? "bg-gradient-to-br from-green-500 to-green-600 text-white"
-      : stats.trend < 0
-      ? "bg-gradient-to-br from-red-500 to-red-600 text-white"
-      : "bg-gradient-to-br from-gray-400 to-gray-500 text-white"
-  }`}
->
-  <div className="flex items-center gap-2">
-    {/* Ganti ikon sesuai arah tren */}
-    {stats.trend > 0 ? (
-      <TrendingUp className="w-5 h-5" />
-    ) : stats.trend < 0 ? (
-      <TrendingDown className="w-5 h-5" />
-    ) : (
-      <TrendingUp className="w-5 h-5 opacity-60" />
-    )}
+              {/* Lencana floating dinamis */}
+              <div
+                className={`absolute -top-5 -right-5 px-6 py-3 rounded-2xl shadow-xl transform rotate-3
+                ${
+                  stats.trend > 0
+                    ? "bg-gradient-to-br from-green-500 to-green-600 text-white"
+                    : stats.trend < 0
+                    ? "bg-gradient-to-br from-red-500 to-red-600 text-white"
+                    : "bg-gradient-to-br from-gray-400 to-gray-500 text-white"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {stats.trend > 0 ? (
+                    <TrendingUp className="w-5 h-5" />
+                  ) : stats.trend < 0 ? (
+                    <TrendingDown className="w-5 h-5" />
+                  ) : (
+                    <TrendingUp className="w-5 h-5 opacity-60" />
+                  )}
 
-    <div>
-      <p className="text-xs font-medium">Trend Mingguan</p>
-      <p className="text-lg font-bold">
-        {stats.trend > 0
-          ? `Naik ${stats.trend.toFixed(2)}%`
-          : stats.trend < 0
-          ? `Turun ${Math.abs(stats.trend).toFixed(2)}%`
-          : "Stabil"}
-      </p>
-    </div>
-  </div>
-</div>
-
-
+                  <div>
+                    <p className="text-xs font-medium">Trend Mingguan</p>
+                    <p className="text-lg font-bold">
+                      {stats.trend > 0
+                        ? `Naik ${stats.trend.toFixed(2)}%`
+                        : stats.trend < 0
+                        ? `Turun ${Math.abs(stats.trend).toFixed(2)}%`
+                        : "Stabil"}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Wave bawah */}
+      {/* Wave bawah dengan gradient */}
       <div className="absolute bottom-0 left-0 right-0">
         <svg
           viewBox="0 0 1440 140"
-          fill="white"
           xmlns="http://www.w3.org/2000/svg"
           className="w-full h-auto"
         >
-          <path d="M0,120 C480,40 960,200 1440,120 L1440,140 L0,140Z" />
+          <defs>
+            <linearGradient id="waveGradient" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="white" />
+              <stop offset="100%" stopColor="#f0fdf4" /> {/* green-50 */}
+            </linearGradient>
+          </defs>
+          <path
+            d="M0,120 C480,40 960,200 1440,120 L1440,140 L0,140Z"
+            fill="url(#waveGradient)"
+          />
         </svg>
       </div>
     </section>

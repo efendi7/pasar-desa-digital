@@ -72,15 +72,21 @@ export const CTASection = () => {
         </div>
       </div>
 
-      {/* Bottom Wave — sekarang menutup penuh area bawah */}
+      {/* === Wave bawah blend halus === */}
       <div className="absolute bottom-[-1px] left-0 right-0 w-full overflow-hidden leading-none">
         <svg
           viewBox="0 0 1440 120"
           xmlns="http://www.w3.org/2000/svg"
           className="block w-full h-[140px] md:h-[160px]"
         >
+          <defs>
+            <linearGradient id="ctaWaveGradient" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="white" />
+              <stop offset="100%" stopColor="#f0fdf4" /> {/* Tailwind green-50 */}
+            </linearGradient>
+          </defs>
           <path
-            fill="white"
+            fill="url(#ctaWaveGradient)"
             d="M0,96L60,101.3C120,107,240,117,360,106.7C480,96,600,64,720,53.3C840,43,960,53,1080,69.3C1200,85,1320,107,1380,117.3L1440,128V0H1380C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,60,0H0Z"
           ></path>
         </svg>

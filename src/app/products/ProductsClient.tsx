@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
+import { ProductCard } from '@/components/ui/ProductCard';
+import { Pagination } from '@/components/Pagination'; // ✅ gunakan komponen eksternal
 
-// --- Skeleton & Pagination ---
+// --- Skeleton Loading ---
 function ProductCardSkeleton() {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
@@ -31,68 +33,7 @@ function ProductsGridSkeleton() {
     </div>
   );
 }
-
-function Pagination({
-  currentPage,
-  totalPages,
-  onPageChange,
-}: {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-}) {
-  if (totalPages <= 1) return null;
-
-  const generatePagination = (currentPage: number, totalPages: number) => {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    if (currentPage <= 3) return [1, 2, 3, '...', totalPages - 1, totalPages];
-    if (currentPage >= totalPages - 2) return [1, 2, '...', totalPages - 2, totalPages - 1, totalPages];
-    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
-  };
-
-  const allPages = generatePagination(currentPage, totalPages);
-
-  return (
-    <div className="flex justify-center items-center gap-1 mt-8 flex-wrap">
-      <button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="flex items-center gap-2 px-4 py-2 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
-      >
-        ← <span className="hidden sm:inline">Previous</span>
-      </button>
-
-      <div className="flex gap-1">
-        {allPages.map((page, index) =>
-          page === '...' ? (
-            <span key={`ellipsis-${index}`} className="px-3 py-2 text-gray-400">
-              ...
-            </span>
-          ) : (
-            <button
-              key={page}
-              onClick={() => onPageChange(Number(page))}
-              className={`min-w-[40px] px-3 py-2 border rounded-md transition ${
-                currentPage === page ? 'bg-green-600 text-white border-green-600' : 'hover:bg-gray-50'
-              }`}
-            >
-              {page}
-            </button>
-          )
-        )}
-      </div>
-
-      <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="flex items-center gap-2 px-4 py-2 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
-      >
-        <span className="hidden sm:inline">Next</span> →
-      </button>
-    </div>
-  );
-}
-// --- End Skeleton & Pagination ---
+// --- End Skeleton ---
 
 interface ProductsClientProps {
   initialPage: number;
@@ -100,6 +41,7 @@ interface ProductsClientProps {
   initialSearch: string;
   initialProducts: any[];
   initialCategories: any[];
+  totalCount: number; 
 }
 
 export default function ProductsClient({
@@ -108,6 +50,7 @@ export default function ProductsClient({
   initialSearch,
   initialProducts,
   initialCategories,
+  totalCount,
 }: ProductsClientProps) {
   const [products] = useState<any[]>(initialProducts);
   const [categories] = useState<any[]>(initialCategories);
@@ -120,14 +63,16 @@ export default function ProductsClient({
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(initialPage);
 
-  const ITEMS_PER_PAGE = 12;
+  const ITEMS_PER_PAGE = 8;
   const router = useRouter();
 
+  // --- debounce pencarian ---
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // --- filter produk berdasarkan kategori & pencarian ---
   useEffect(() => {
     setLoading(true);
     const timer = setTimeout(() => {
@@ -169,6 +114,7 @@ export default function ProductsClient({
     setLoading(false);
   }
 
+  // --- update URL sesuai state ---
   function updateURL(page: number, category: string, search: string) {
     const params = new URLSearchParams();
     if (page > 1) params.set('page', page.toString());
@@ -178,12 +124,20 @@ export default function ProductsClient({
     router.push(`/products${queryString ? `?${queryString}` : ''}`, { scroll: false });
   }
 
+  // --- pagination logic ---
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const currentProducts = filteredProducts.slice(startIndex, endIndex);
   const startItem = filteredProducts.length > 0 ? startIndex + 1 : 0;
   const endItem = Math.min(endIndex, filteredProducts.length);
+
+  // --- handler ganti halaman + scroll ke atas ---
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    updateURL(page, selectedCategory, debouncedSearch);
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // ✅ scroll ke atas
+  };
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0">
@@ -200,13 +154,10 @@ export default function ProductsClient({
         </ol>
       </nav>
 
-      {/* Header & Filter Section - Menyatu */}
+      {/* Header & Filter Section */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-8 relative">
-        {/* Header */}
         <div className="bg-gradient-to-r from-green-50 to-green-100/50 px-8 py-6 border-b border-green-200">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Katalog Produk
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900">Katalog Produk</h1>
           <p className="text-gray-600 mt-1">
             Temukan produk UMKM terbaik dari desa
           </p>
@@ -280,6 +231,7 @@ export default function ProductsClient({
               setSearchQuery('');
               setDebouncedSearch('');
               setCurrentPage(1);
+              updateURL(1, 'all', '');
             }}
             className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
             suppressHydrationWarning
@@ -290,54 +242,25 @@ export default function ProductsClient({
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {currentProducts.map((product) => (
-              <div
-                key={product.id}
-                className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl transition group"
-              >
-                <Link href={`/products/${product.id}`}>
-                  <div className="h-48 bg-gray-200 overflow-hidden relative">
-                    {product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-5xl">📦</div>
-                    )}
-                  </div>
-                </Link>
-                <div className="p-4">
-                  <Link href={`/products/${product.id}`}>
-                    <h3 className="font-semibold text-gray-800 mb-1 line-clamp-2 group-hover:text-green-600 transition cursor-pointer">
-                      {product.name}
-                    </h3>
-                  </Link>
-                  {product.profiles?.store_name && (
-                    <Link
-                      href={`/store/${product.profiles.id}`}
-                      className="text-sm text-amber-600 hover:underline font-medium mb-2 block"
-                    >
-                      {product.profiles.store_name}
-                    </Link>
-                  )}
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-bold text-green-600">
-                      Rp {product.price.toLocaleString('id-ID')}
-                    </span>
-                    {product.categories && (
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                        {product.categories.name}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
+            {currentProducts.map((product, index) => (
+              <Link key={product.id} href={`/products/${product.id}`}>
+                <ProductCard 
+                  product={product} 
+                  showEdit={false}
+                  showStore={true}
+                  index={index}
+                />
+              </Link>
             ))}
           </div>
 
-          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+          {/* ✅ gunakan Pagination eksternal */}
+          <Pagination
+            currentPage={currentPage}
+             totalItems={totalCount} 
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={handlePageChange}
+          />
         </>
       )}
     </div>
