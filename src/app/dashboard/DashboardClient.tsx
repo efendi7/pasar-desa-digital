@@ -15,7 +15,7 @@ import { PageHeader } from '@/components/PageHeader';
 import UserStatsGrid from '@/components/dashboard/UserStatsGrid';
 import UserQuickActions from '@/components/dashboard/UserQuickActions';
 import { ProductCard } from '@/components/ui/ProductCard';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { FilterToggle } from '@/components/FilterToggle';
 
 interface DashboardClientProps {

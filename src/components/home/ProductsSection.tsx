@@ -2,7 +2,7 @@
 
 import { Product } from "@/app/page";
 import { ArrowLeft, ArrowRight, Store, Sparkles, TrendingUp } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ProductCard } from "@/components/ui/ProductCard";
