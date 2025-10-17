@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
@@ -10,7 +10,8 @@ import { FormInput } from '@/components/FormInput';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { SecondaryButton } from '@/components/SecondaryButton';
 
-export default function LoginPage() {
+// Pisahkan logic utama ke komponen anak
+function LoginContent() {
   const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,7 +24,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (searchParams.get('verified')) {
-      supabase.auth.signOut(); // hapus session otomatis Supabase
+      supabase.auth.signOut();
       setInfo('✅ Email Anda sudah diverifikasi. Silakan login.');
     }
   }, [searchParams, supabase]);
@@ -134,5 +135,14 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Bungkus dengan Suspense di komponen utama
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }
