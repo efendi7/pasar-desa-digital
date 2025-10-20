@@ -157,10 +157,6 @@ export default function DashboardClient({
                         showEdit
                         profileName={profile?.store_name}
                       />
-                      {/* PERMINTAAN 1: Tampilkan ArrowRight di setiap produk */}
-                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-md pointer-events-none">
-                        <ArrowRight className="h-5 w-5 text-emerald-600" />
-                      </div>
                     </div>
                   ))}
                 </div>

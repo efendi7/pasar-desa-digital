@@ -2,16 +2,16 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Eye, Store, Package, Edit } from "lucide-react";
+import { Eye, Store, Package, Edit, MapPin } from "lucide-react";
 import React from "react";
 
 interface ProductCardProps {
   product: any;
-  showEdit?: boolean; // untuk dashboard
-  showStore?: boolean; // untuk tampilkan nama toko
-  profileName?: string; // nama toko (dari profil dashboard)
-  index?: number; // animasi delay
-  children?: React.ReactNode; // ✅ Tambahkan ini supaya bisa kirim toggle dari luar
+  showEdit?: boolean;
+  showStore?: boolean;
+  profileName?: string;
+  index?: number;
+  children?: React.ReactNode;
 }
 
 export const ProductCard = ({
@@ -20,7 +20,7 @@ export const ProductCard = ({
   showStore = true,
   profileName,
   index = 0,
-  children, // ✅ Tambahkan ini
+  children,
 }: ProductCardProps) => {
   return (
     <motion.div
@@ -29,10 +29,10 @@ export const ProductCard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
       whileHover={{ scale: 1.02 }}
-      className="group rounded-2xl overflow-hidden bg-white border border-border shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-500"
+      className="group rounded-2xl overflow-hidden bg-white border border-border shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 flex flex-col h-full"
     >
       {/* Gambar Produk */}
-      <div className="relative h-48 sm:h-56 bg-muted overflow-hidden">
+      <div className="relative h-48 sm:h-56 bg-muted overflow-hidden flex-shrink-0">
         {product.image_url ? (
           <img
             src={product.image_url}
@@ -44,29 +44,47 @@ export const ProductCard = ({
             <Package className="h-14 w-14 text-muted-foreground/50" />
           </div>
         )}
-        {product.categories && (
-          <div className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-primary border border-primary/20 shadow-sm">
-            {product.categories?.name || "Kategori"}
-          </div>
-        )}
+
+        {/* Badge Kategori & Dusun */}
+        <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
+          {/* Label Kategori */}
+          {product.categories?.name && (
+            <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-700 border border-emerald-200 shadow-sm">
+              {product.categories.name}
+            </div>
+          )}
+
+          {/* Label Dusun */}
+          {product.profiles?.dusun?.name && (
+            <div className="bg-amber-50/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium text-amber-700 border border-amber-200 shadow-sm flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5" />
+              {product.profiles.dusun.name}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Detail Produk */}
-      <div className="p-5 space-y-3">
-        <h3 className="font-semibold text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors">
-          {product.name}
-        </h3>
+      <div className="p-5 space-y-3 flex-grow flex flex-col">
+        {/* Nama Produk */}
+        <div className="h-14 flex items-start">
+          <h3 className="font-semibold text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors leading-snug">
+            {product.name}
+          </h3>
+        </div>
 
+        {/* Nama Toko */}
         {showStore && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Store className="h-4 w-4" />
+            <Store className="h-4 w-4 flex-shrink-0" />
             <span className="truncate">
               {product.profiles?.store_name || profileName || "Toko"}
             </span>
           </div>
         )}
 
-        <div className="flex justify-between items-center pt-3 border-t border-border">
+        {/* Harga & View */}
+        <div className="flex justify-between items-center pt-3 border-t border-border mt-auto">
           <span className="text-xl font-bold text-primary">
             Rp {product.price?.toLocaleString("id-ID")}
           </span>
@@ -76,10 +94,10 @@ export const ProductCard = ({
           </div>
         </div>
 
-        {/* ✅ Tambahkan toggle atau konten tambahan di bawah harga */}
+        {/* Konten tambahan */}
         {children && <div className="pt-3">{children}</div>}
 
-        {/* Tombol (jika di dashboard) */}
+        {/* Tombol Edit (khusus dashboard) */}
         {showEdit && (
           <div className="flex gap-2 pt-3">
             <Link

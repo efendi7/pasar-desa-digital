@@ -20,12 +20,34 @@ async function DashboardPage() {
     .eq('id', user.id)
     .single();
 
-  // Fetch products data
-  const { data: productsData } = await supabase
-    .from('products')
-    .select('*, categories(name)')
-    .eq('owner_id', user.id)
-    .order('created_at', { ascending: false });
+  // Fetch products data (termasuk kategori dan dusun)
+const { data: productsData, error: productsError } = await supabase
+  .from('products')
+  .select(`
+    *,
+    categories(
+      id,
+      name,
+      slug
+    ),
+    profiles(
+      id,
+      store_name,
+      full_name,
+      whatsapp_number,
+      dusun:dusun_id(
+        id,
+        name,
+        slug
+      )
+    )
+  `)
+  .eq('owner_id', user.id)
+  .order('created_at', { ascending: false });
+
+if (productsError) {
+  console.error('Error fetching products:', productsError);
+}
 
   return (
     <Suspense fallback={

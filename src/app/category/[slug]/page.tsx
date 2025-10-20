@@ -4,18 +4,19 @@ import { createClient } from '@/utils/supabase/client';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Package } from 'lucide-react';
+import { ProductCard } from '@/components/ui/ProductCard';
 
 // Skeleton Component
 function ProductCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl shadow-md overflow-hidden animate-pulse">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
       <div className="h-48 bg-gray-200" />
       <div className="p-4 space-y-3">
-        <div className="h-4 bg-gray-200 rounded-lg w-3/4" />
-        <div className="h-3 bg-gray-200 rounded-lg w-1/2" />
+        <div className="h-4 bg-gray-200 rounded w-3/4" />
+        <div className="h-3 bg-gray-200 rounded w-1/2" />
         <div className="flex justify-between items-center pt-2">
-          <div className="h-5 bg-gray-200 rounded-lg w-20" />
-          <div className="h-5 bg-gray-200 rounded-lg w-16" />
+          <div className="h-5 bg-gray-200 rounded w-20" />
+          <div className="h-5 bg-gray-200 rounded w-16" />
         </div>
       </div>
     </div>
@@ -32,37 +33,58 @@ function ProductsGridSkeleton() {
   );
 }
 
-// Category Icons & Colors
-const categoryConfig: Record<string, { icon: string; gradient: string; bg: string }> = {
-  makanan: {
-    icon: '🍽️',
+// ✅ Category Icons & Colors - Disesuaikan dengan database
+import {
+  UtensilsCrossed,
+  Shirt,
+  Palette,
+  Wheat,
+  Laptop,
+  Dumbbell,
+  Sparkles,
+  Package as PackageIcon,
+} from 'lucide-react';
+
+const categoryConfig: Record<string, { Icon: any; gradient: string; bg: string }> = {
+  'makanan-minuman': {
+    Icon: UtensilsCrossed,
     gradient: 'from-orange-500 to-red-500',
-    bg: 'bg-gradient-to-br from-orange-50 to-red-50',
+    bg: 'from-orange-50 to-red-50',
   },
-  minuman: {
-    icon: '☕',
-    gradient: 'from-blue-500 to-cyan-500',
-    bg: 'bg-gradient-to-br from-blue-50 to-cyan-50',
+  'fashion': {
+    Icon: Shirt,
+    gradient: 'from-pink-500 to-rose-500',
+    bg: 'from-pink-50 to-rose-50',
   },
-  kerajinan: {
-    icon: '🎨',
+  'kerajinan': {
+    Icon: Palette,
     gradient: 'from-purple-500 to-pink-500',
-    bg: 'bg-gradient-to-br from-purple-50 to-pink-50',
+    bg: 'from-purple-50 to-pink-50',
   },
-  pakaian: {
-    icon: '👔',
-    gradient: 'from-indigo-500 to-blue-500',
-    bg: 'bg-gradient-to-br from-indigo-50 to-blue-50',
-  },
-  pertanian: {
-    icon: '🌾',
+  'pertanian': {
+    Icon: Wheat,
     gradient: 'from-green-500 to-emerald-500',
-    bg: 'bg-gradient-to-br from-green-50 to-emerald-50',
+    bg: 'from-green-50 to-emerald-50',
   },
-  lainnya: {
-    icon: '✨',
+  'elektronik': {
+    Icon: Laptop,
+    gradient: 'from-blue-500 to-cyan-500',
+    bg: 'from-blue-50 to-cyan-50',
+  },
+  'olahraga': {
+    Icon: Dumbbell,
+    gradient: 'from-red-500 to-orange-500',
+    bg: 'from-red-50 to-orange-50',
+  },
+  'kecantikan': {
+    Icon: Sparkles,
+    gradient: 'from-rose-500 to-pink-500',
+    bg: 'from-rose-50 to-pink-50',
+  },
+  'lainnya': {
+    Icon: PackageIcon,
     gradient: 'from-gray-500 to-slate-500',
-    bg: 'bg-gradient-to-br from-gray-50 to-slate-50',
+    bg: 'from-gray-50 to-slate-50',
   },
 };
 
@@ -76,6 +98,7 @@ export default function CategoryPage() {
   const slug = params.slug as string;
 
   const config = categoryConfig[slug] || categoryConfig.lainnya;
+  const CategoryIcon = config.Icon;
 
   useEffect(() => {
     loadCategoryAndProducts();
@@ -101,7 +124,7 @@ export default function CategoryPage() {
       // Load products in this category
       const { data: productsData } = await supabase
         .from('products')
-        .select('*, profiles!inner(store_name), categories(name)')
+        .select('*, profiles!inner(store_name, dusun(name, slug)), categories(name, slug)')
         .eq('category_id', categoryData.id)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
@@ -117,14 +140,14 @@ export default function CategoryPage() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Skeleton Breadcrumb */}
         <div className="mb-6 h-5 bg-gray-200 rounded-lg w-64 animate-pulse" />
         
         {/* Skeleton Header */}
-        <div className="bg-white rounded-2xl shadow-md p-8 mb-8 animate-pulse">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mb-8 animate-pulse">
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 bg-gray-200 rounded-2xl" />
+            <div className="w-16 h-16 bg-gray-200 rounded-2xl" />
             <div className="flex-1 space-y-3">
               <div className="h-8 bg-gray-200 rounded-lg w-48" />
               <div className="h-5 bg-gray-200 rounded-lg w-32" />
@@ -139,10 +162,10 @@ export default function CategoryPage() {
 
   if (error || !category) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="max-w-2xl mx-auto text-center">
           <div className="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
-            <span className="text-5xl">😞</span>
+            <Package className="w-12 h-12 text-gray-400" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-3">
             {error || 'Kategori Tidak Ditemukan'}
@@ -163,9 +186,9 @@ export default function CategoryPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Breadcrumb */}
-      <nav className="mb-6 text-sm">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0">
+      {/* Breadcrumb - Consistent with Products Page */}
+      <nav className="mb-6 text-sm relative z-0">
         <ol className="flex items-center gap-2 text-gray-600">
           <li>
             <Link href="/" className="hover:text-green-600 transition">
@@ -175,7 +198,7 @@ export default function CategoryPage() {
           <li>/</li>
           <li>
             <Link href="/products" className="hover:text-green-600 transition">
-              Produk
+              Katalog Produk
             </Link>
           </li>
           <li>/</li>
@@ -183,54 +206,63 @@ export default function CategoryPage() {
         </ol>
       </nav>
 
-      {/* Category Header - Enhanced */}
-      <div className={`${config.bg} rounded-3xl shadow-lg p-8 mb-8 border border-white/50`}>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-          {/* Icon */}
-          <div className={`w-20 h-20 bg-gradient-to-br ${config.gradient} rounded-2xl flex items-center justify-center text-4xl shadow-lg`}>
-            {config.icon}
-          </div>
-
-          {/* Text Content */}
-          <div className="flex-1">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
-              {category.name}
-            </h1>
-            <div className="flex items-center gap-2 text-gray-600">
-              <Package className="w-5 h-5" />
-              <span className="text-lg">
-                {products.length} produk tersedia
-              </span>
+      {/* Category Header - Styled like Products Page */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-8">
+        <div className={`bg-gradient-to-r ${config.bg} px-8 py-6 border-b border-gray-200`}>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+            {/* Icon */}
+            <div className={`w-16 h-16 bg-gradient-to-br ${config.gradient} rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0`}>
+              <CategoryIcon className="w-8 h-8 text-white" />
             </div>
-          </div>
 
-          {/* Back Button - Desktop */}
-          <Link
-            href="/products"
-            className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-xl hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-200"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="font-medium">Semua Kategori</span>
-          </Link>
+            {/* Text Content */}
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900 mb-1">
+                {category.name}
+              </h1>
+              <div className="flex items-center gap-2 text-gray-600">
+                <Package className="w-4 h-4" />
+                <span className="text-sm">
+                  {products.length} produk tersedia
+                </span>
+              </div>
+            </div>
+
+            {/* Back Button - Desktop */}
+            <Link
+              href="/products"
+              className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-xl hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-200"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="font-medium">Semua Produk</span>
+            </Link>
+          </div>
         </div>
       </div>
 
+      {/* Results Info */}
+      {products.length > 0 && (
+        <div className="mb-4 text-gray-600 text-sm">
+          Menampilkan <span className="font-semibold">{products.length}</span> produk
+        </div>
+      )}
+
       {/* Products Grid or Empty State */}
       {products.length === 0 ? (
-        <div className="bg-white rounded-3xl shadow-lg p-12 text-center border border-gray-100">
-          <div className="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
-            <span className="text-5xl">{config.icon}</span>
+        <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-12 text-center">
+          <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <CategoryIcon className="w-10 h-10 text-gray-400" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-3">
+          <h3 className="text-2xl font-bold text-gray-800 mb-2">
             Belum Ada Produk
           </h3>
-          <p className="text-gray-600 mb-8 max-w-md mx-auto">
+          <p className="text-gray-600 mb-6">
             Belum ada produk dalam kategori {category.name}. 
             Coba jelajahi kategori lain atau lihat semua produk kami.
           </p>
           <Link
             href="/products"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-200"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-200"
           >
             <Package className="w-5 h-5" />
             Lihat Semua Produk
@@ -239,42 +271,14 @@ export default function CategoryPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <Link
-                key={product.id}
-                href={`/products/${product.id}`}
-                className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-200 group border border-gray-100 hover:border-green-200"
-              >
-                <div className="h-48 bg-gray-200 overflow-hidden relative">
-                  {product.image_url ? (
-                    <img
-                      src={product.image_url}
-                      alt={product.name}
-                      loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-5xl">
-                      {config.icon}
-                    </div>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 group-hover:text-green-600 transition-colors">
-                    {product.name}
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-3">
-                    {product.profiles?.store_name}
-                  </p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-bold text-green-600">
-                      Rp {product.price.toLocaleString('id-ID')}
-                    </span>
-                    <span className="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-lg font-medium">
-                      {product.categories?.name}
-                    </span>
-                  </div>
-                </div>
+            {products.map((product, index) => (
+              <Link key={product.id} href={`/products/${product.id}`}>
+                <ProductCard 
+                  product={product} 
+                  showEdit={false}
+                  showStore={true}
+                  index={index}
+                />
               </Link>
             ))}
           </div>

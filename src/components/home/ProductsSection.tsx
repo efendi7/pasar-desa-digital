@@ -4,7 +4,7 @@ import { Product } from "@/app/page";
 import { ArrowLeft, ArrowRight, Store, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { ProductCard } from "@/components/ui/ProductCard";
 import { FilterToggle } from "@/components/FilterToggle";
 
@@ -17,36 +17,51 @@ export const ProductsSection = ({ products }: ProductsSectionProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [activeFilter, setActiveFilter] = useState<"latest" | "popular">("latest");
 
-  // Ambil 10 produk terbaru
-  const latestProducts = [...products]
-    .sort((a, b) => (b.id > a.id ? 1 : -1))
-    .slice(0, 10);
+  // ✅ Memoize kalkulasi produk untuk menghindari sorting berulang
+  const latestProducts = useMemo(() => 
+    [...products]
+      .sort((a, b) => (b.id > a.id ? 1 : -1))
+      .slice(0, 10),
+    [products]
+  );
 
-  // Ambil 10 produk terpopuler
-  const popularProducts = [...products]
-    .sort((a, b) => (b.views || 0) - (a.views || 0))
-    .slice(0, 10);
+  const popularProducts = useMemo(() => 
+    [...products]
+      .sort((a, b) => (b.views || 0) - (a.views || 0))
+      .slice(0, 10),
+    [products]
+  );
 
-  // Tentukan produk mana yang ditampilkan
   const displayedProducts = activeFilter === "latest" ? latestProducts : popularProducts;
 
-  // Efek untuk animasi fade-up saat scroll
+  // ✅ Optimasi IntersectionObserver dengan cleanup yang benar
   useEffect(() => {
     const section = sectionRef.current;
-    const items = section?.querySelectorAll(".animate-fade-up");
+    if (!section) return;
+
+    const items = section.querySelectorAll(".animate-fade-up");
+    if (items.length === 0) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add("opacity-100", "translate-y-0");
+            // ✅ Unobserve setelah animasi untuk performa
+            observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.1 }
+      { threshold: 0.1, rootMargin: '50px' }
     );
-    items?.forEach((item) => observer.observe(item));
-    return () => observer.disconnect();
-  }, []);
+
+    items.forEach((item) => observer.observe(item));
+
+    return () => {
+      items.forEach((item) => observer.unobserve(item));
+      observer.disconnect();
+    };
+  }, [displayedProducts]); // ✅ Hanya re-run saat produk berubah
 
   // Reset scroll position saat filter berubah
   useEffect(() => {
@@ -55,23 +70,23 @@ export const ProductsSection = ({ products }: ProductsSectionProps) => {
     }
   }, [activeFilter]);
 
-  const handleScroll = (direction: "left" | "right") => {
+  // ✅ Memoize scroll handler dengan useCallback
+  const handleScroll = useCallback((direction: "left" | "right") => {
     const container = scrollContainerRef.current;
-    if (container) {
-      const firstCard = container.querySelector(".card") as HTMLElement;
-      if (firstCard) {
-        const scrollAmount = firstCard.offsetWidth + 24;
-        container.scrollBy({
-          left: direction === "right" ? scrollAmount : -scrollAmount,
-          behavior: "smooth",
-        });
-      }
-    }
-  };
+    if (!container) return;
+
+    // ✅ Hitung scroll amount tanpa querySelector
+    const scrollAmount = container.offsetWidth * 0.8; // Scroll 80% dari container width
+    
+    container.scrollBy({
+      left: direction === "right" ? scrollAmount : -scrollAmount,
+      behavior: "smooth",
+    });
+  }, []);
 
   return (
     <section ref={sectionRef} id="products" className="space-y-10 px-4 sm:px-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 opacity-0 translate-y-6 animate-fade-up transition-all duration-700">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 opacity-0 translate-y-6 animate-fade-up transition-opacity transition-transform duration-700">
         <div>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground flex items-center gap-2">
             {activeFilter === "latest" ? (
@@ -94,7 +109,6 @@ export const ProductsSection = ({ products }: ProductsSectionProps) => {
         </div>
 
         <div className="flex flex-wrap gap-3 items-center w-full sm:w-auto">
-          {/* Filter Toggle Buttons */}
           <FilterToggle 
             activeFilter={activeFilter}
             onFilterChange={setActiveFilter}
@@ -102,7 +116,7 @@ export const ProductsSection = ({ products }: ProductsSectionProps) => {
           
           <Button
             variant="ghost"
-            className="group hover:bg-primary/10 hover:text-primary transition-all hidden sm:flex"
+            className="group hover:bg-primary/10 hover:text-primary transition-colors hidden sm:flex"
             asChild
           >
             <Link href="/products">
@@ -114,7 +128,7 @@ export const ProductsSection = ({ products }: ProductsSectionProps) => {
       </div>
 
       {displayedProducts.length === 0 ? (
-        <div className="animate-fade-up bg-card rounded-2xl shadow-lg p-16 text-center border border-border opacity-0 translate-y-6 transition-all duration-700">
+        <div className="animate-fade-up bg-card rounded-2xl shadow-lg p-16 text-center border border-border opacity-0 translate-y-6 transition-opacity transition-transform duration-700">
           <div className="mb-4 flex justify-center">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-muted rounded-full shadow-inner">
               <Store className="h-10 w-10 text-muted-foreground" />
@@ -137,9 +151,12 @@ export const ProductsSection = ({ products }: ProductsSectionProps) => {
         <div className="relative">
           <div
             ref={scrollContainerRef}
-            className="flex gap-6 overflow-x-auto no-scrollbar scroll-smooth py-4 pb-8 xl:pb-10 scroll-snap-x transition-opacity duration-300"
+            className="flex gap-6 overflow-x-auto no-scrollbar scroll-smooth py-4 pb-8 xl:pb-10 scroll-snap-x"
             style={{
               maskImage: "linear-gradient(to right, black 85%, transparent)",
+              // ✅ Optimize scroll performance
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
             }}
           >
             {displayedProducts.map((product, index) => (
@@ -179,7 +196,7 @@ export const ProductsSection = ({ products }: ProductsSectionProps) => {
       <div className="text-center">
         <Button
           variant="outline"
-          className="hover:bg-primary hover:text-primary-foreground active:scale-95 transition-all sm:hidden"
+          className="hover:bg-primary hover:text-primary-foreground active:scale-95 transition-colors sm:hidden"
           asChild
         >
           <Link href="/products">

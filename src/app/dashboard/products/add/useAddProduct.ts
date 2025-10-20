@@ -14,17 +14,17 @@ export function useAddProduct() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
+  const [dusuns, setDusuns] = useState<any[]>([]); // 👈 1. Add state for dusuns
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // 🔹 Ambil user login & kategori saat pertama kali render
+  // 🔹 Ambil user login, kategori & dusun saat pertama kali render
   useEffect(() => {
     (async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      // Jika belum login, arahkan ke halaman login
       if (!user) {
         router.push('/login');
         return;
@@ -41,17 +41,24 @@ export function useAddProduct() {
       if (!catError && categoriesData) {
         setCategories(categoriesData);
       }
+
+      // 👈 2. Fetch dusuns data
+      const { data: dusunsData, error: dusunError } = await supabase
+        .from('dusun')
+        .select('*')
+        .order('name');
+      
+      if (!dusunError && dusunsData) {
+        setDusuns(dusunsData);
+      }
     })();
   }, [router, supabase]);
 
   /**
    * 🔹 Upload maksimal 4 gambar ke Supabase Storage
-   * @param slots daftar File (max 4)
-   * @param userId id pengguna
    */
   async function uploadImages(slots: (File | null)[], userId: string) {
     const urls: (string | null)[] = Array(4).fill(null);
-
     await Promise.all(
       slots.map(async (file, i) => {
         if (!file) return;
@@ -70,7 +77,6 @@ export function useAddProduct() {
         urls[i] = data.publicUrl;
       })
     );
-
     return urls;
   }
 
@@ -82,6 +88,7 @@ export function useAddProduct() {
     description: string;
     price: string;
     categoryId: string;
+    dusunId: string; // 👈 3. Add dusunId to the function parameter type
     images: (File | null)[];
   }) {
     setLoading(true);
@@ -94,16 +101,15 @@ export function useAddProduct() {
     }
 
     try {
-      // Upload gambar ke Supabase Storage
       const imageUrls = await uploadImages(form.images, userId);
 
-      // Simpan produk ke tabel `products`
       const { error: insertError } = await supabase.from('products').insert({
         owner_id: userId,
         name: form.name.trim(),
         description: form.description.trim(),
         price: parseFloat(form.price),
         category_id: form.categoryId || null,
+        dusun_id: form.dusunId || null, // 👈 4. Add dusun_id to the insert object
         image_url: imageUrls[0],
         image_url_1: imageUrls[1],
         image_url_2: imageUrls[2],
@@ -113,7 +119,6 @@ export function useAddProduct() {
 
       if (insertError) throw insertError;
 
-      // Arahkan user ke halaman produk dashboard setelah sukses
       router.push('/dashboard/products');
     } catch (err: any) {
       console.error('Error saat menambah produk:', err);
@@ -125,6 +130,7 @@ export function useAddProduct() {
 
   return {
     categories,
+    dusuns, // 👈 5. Return dusuns so the page component can use it
     loading,
     error,
     submitProduct,

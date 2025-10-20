@@ -7,6 +7,7 @@ interface PageProps {
     page?: string; 
     category?: string; 
     search?: string;
+    dusun?: string; // 👈 1. Tambah parameter dusun
   }>;
 }
 
@@ -19,6 +20,7 @@ async function ProductsPage({ searchParams }: PageProps) {
   const page = parseInt(params.page || '1', 10);
   const category = params.category || 'all';
   const search = params.search || '';
+  const dusun = params.dusun || 'all'; // 👈 2. Baca parameter dusun dari URL
 
   // Hitung range untuk pagination
   const from = (page - 1) * ITEMS_PER_PAGE;
@@ -27,14 +29,21 @@ async function ProductsPage({ searchParams }: PageProps) {
   // Query dasar
   let query = supabase
     .from("products")
-    .select("*, profiles!inner(id, store_name), categories(name, slug)", { count: "exact" })
+    // 👈 3. Update select untuk mengambil data dusun melalui profiles
+    .select("*, categories(name, slug), profiles!inner(store_name, dusun(name, slug))", { count: "exact" })
     .eq("is_active", true)
     .order("created_at", { ascending: false })
-    .range(from, to); // ✅ batasi hasil sesuai halaman
+    .range(from, to);
 
   // Filter kategori
   if (category !== "all") {
     query = query.eq("categories.slug", category);
+  }
+
+  // 👈 4. Tambah filter dusun
+  if (dusun !== "all") {
+    // Filter berdasarkan slug dusun yang ada di dalam tabel profiles
+    query = query.eq("profiles.dusun.slug", dusun);
   }
 
   // Filter pencarian (jika panjang >= 3)
@@ -45,8 +54,15 @@ async function ProductsPage({ searchParams }: PageProps) {
 
   const { data: products, count } = await query;
 
+  // Ambil daftar kategori
   const { data: categories } = await supabase
     .from("categories")
+    .select("*")
+    .order("name");
+    
+  // 👈 5. Ambil daftar semua dusun untuk dropdown filter
+  const { data: dusuns } = await supabase
+    .from("dusun")
     .select("*")
     .order("name");
 
@@ -55,10 +71,12 @@ async function ProductsPage({ searchParams }: PageProps) {
       <ProductsClient
         initialProducts={products || []}
         initialCategories={categories || []}
+        initialDusuns={dusuns || []} // 👈 6. Kirim daftar dusun ke client
         initialPage={page}
         initialCategory={category}
+        initialDusun={dusun} // 👈 6. Kirim dusun yang aktif ke client
         initialSearch={search}
-        totalCount={count || 0} // ✅ kirim total untuk pagination
+        totalCount={count || 0}
       />
     </Suspense>
   );

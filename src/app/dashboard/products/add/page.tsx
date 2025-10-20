@@ -14,13 +14,16 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { SecondaryButton } from '@/components/SecondaryButton';
 
 export default function AddProductPage() {
-  const { categories, loading, error, submitProduct } = useAddProduct();
+  const { categories, dusuns, loading, error, submitProduct } = useAddProduct();
+
+  console.log('Isi state dusuns:', dusuns);
 
   const [form, setForm] = useState({
     name: '',
     description: '',
     price: '',
     categoryId: '',
+    dusunId: '',
     images: [null, null, null, null] as (File | null)[],
   });
 
@@ -76,19 +79,27 @@ export default function AddProductPage() {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
 
-          {/* 📂 Kategori & 💰 Harga */}
+          {/* 📂 Kategori, Dusun & 💰 Harga */}
           <div className="grid md:grid-cols-2 gap-6">
-           <FormSelect
-  label="Kategori"
-  value={form.categoryId}
-  onChange={(val) => setForm({ ...form, categoryId: String(val) })}
-  options={categories.map((c) => ({
-    value: String(c.id),
-    label: c.name,
-  }))}
-/>
+            <FormSelect
+              label="Kategori"
+              value={form.categoryId}
+              onChange={(val) => setForm({ ...form, categoryId: String(val) })}
+              options={categories.map((c) => ({
+                value: String(c.id),
+                label: c.name,
+              }))}
+            />
 
-
+            <FormSelect
+              label="Dusun"
+              value={form.dusunId}
+              onChange={(val) => setForm({ ...form, dusunId: String(val) })}
+              options={dusuns.map((d) => ({
+                value: String(d.id),
+                label: d.name,
+              }))}
+            />
 
             <FormInput
               label="Harga (Rp) *"
@@ -116,23 +127,23 @@ export default function AddProductPage() {
           )}
 
           {/* 🧭 Tombol Aksi */}
-<div className="flex flex-col sm:flex-row gap-3 pt-4">
-  <PrimaryButton
-    type="submit"
-    loading={loading}
-    icon={<Upload className="w-5 h-5" />}
-    className="w-full sm:flex-grow sm:w-auto"
-  >
-    Simpan Produk
-  </PrimaryButton>
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <PrimaryButton
+              type="submit"
+              loading={loading}
+              icon={<Upload className="w-5 h-5" />}
+              className="w-full sm:flex-grow sm:w-auto"
+            >
+              Simpan Produk
+            </PrimaryButton>
 
-  <SecondaryButton
-    href="/dashboard/products"
-    className="sm:w-auto"
-  >
-    Batal
-  </SecondaryButton>
-</div>
+            <SecondaryButton
+              href="/dashboard/products"
+              className="sm:w-auto"
+            >
+              Batal
+            </SecondaryButton>
+          </div>
 
         </form>
       </div>

@@ -96,9 +96,11 @@ export default function ProductDetailPage() {
         isActive: productData.is_active,
       });
 
-      if (productData.is_active && !viewIncrementedRef.current[productId] && !sudahViewed) {
-        await incrementProductView(productId);
-      }
+      // hanya non-admin yang menambah view
+if (!isAdmin && productData.is_active && !viewIncrementedRef.current[productId] && !sudahViewed) {
+  await incrementProductView(productId);
+}
+
 
       // produk serupa
       if (productData.category_id) {
@@ -120,41 +122,35 @@ export default function ProductDetailPage() {
     }
   }
 
-async function incrementProductView(productId: string) {
-  try {
-    viewIncrementedRef.current[productId] = true;
+  async function incrementProductView(productId: string) {
+    try {
+      viewIncrementedRef.current[productId] = true;
 
-    console.log('🚀 Tambah total & harian views:', productId);
+      console.log('🚀 Tambah total & harian views:', productId);
 
-    // 1️⃣ Tambah total view di tabel products
-    const { error: errorTotal } = await supabase.rpc('increment_views', {
-      product_id: productId,
-    });
+      // 1️⃣ Tambah total view di tabel products
+      const { error: errorTotal } = await supabase.rpc('increment_views', {
+        product_id: productId,
+      });
 
-    // 2️⃣ Tambah daily view di tabel product_views_daily
-const { error: errorDaily } = await supabase.rpc('increment_daily_view', { p_product_id: productId });
+      // 2️⃣ Tambah daily view di tabel product_views_daily
+      const { error: errorDaily } = await supabase.rpc('increment_daily_view', { 
+        p_product_id: productId 
+      });
 
-if (errorTotal || errorDaily) {
-  console.error('❌ RPC error:', errorTotal || errorDaily);
-  viewIncrementedRef.current[productId] = false;
-  return;
-}
+      if (errorTotal || errorDaily) {
+        console.error('❌ RPC error:', errorTotal || errorDaily);
+        viewIncrementedRef.current[productId] = false;
+        return;
+      }
 
-
-    if (errorTotal || errorDaily) {
-      console.error('❌ RPC error:', errorTotal || errorDaily);
+      markAsViewedToday(productId);
+      console.log('✅ View berhasil ditambah total + harian untuk:', productId);
+    } catch (err) {
+      console.error('❌ Error increment views:', err);
       viewIncrementedRef.current[productId] = false;
-      return;
     }
-
-    markAsViewedToday(productId);
-    console.log('✅ View berhasil ditambah total + harian untuk:', productId);
-  } catch (err) {
-    console.error('❌ Error increment views:', err);
-    viewIncrementedRef.current[productId] = false;
   }
-}
-
 
   function hasViewedToday(productId: string): boolean {
     try {
