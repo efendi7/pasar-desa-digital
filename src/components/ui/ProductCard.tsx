@@ -1,8 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Link from "next/link";
-import { Eye, Store, Package, Edit, MapPin } from "lucide-react";
+import Image from "next/image";
+import { Eye, Store, Package, Edit } from "lucide-react";
 import React from "react";
 
 interface ProductCardProps {
@@ -14,68 +14,49 @@ interface ProductCardProps {
   children?: React.ReactNode;
 }
 
-export const ProductCard = ({
+export const ProductCard = React.memo(function ProductCard({
   product,
   showEdit = false,
   showStore = true,
   profileName,
   index = 0,
   children,
-}: ProductCardProps) => {
+}: ProductCardProps) {
   return (
-    <motion.div
-      key={product.id}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      whileHover={{ scale: 1.02 }}
-      className="group rounded-2xl overflow-hidden bg-white border border-border shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 flex flex-col h-full"
+    <div
+      className="group rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border border-border dark:border-zinc-800 shadow-md hover:shadow-lg hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 flex flex-col h-full"
+      style={{
+        animationDelay: `${index * 50}ms`,
+      }}
     >
-      {/* Gambar Produk */}
-      <div className="relative h-48 sm:h-56 bg-muted overflow-hidden flex-shrink-0">
+      {/* Gambar produk */}
+      <div className="relative h-48 sm:h-56 bg-muted dark:bg-zinc-800 overflow-hidden">
         {product.image_url ? (
-          <img
-            src={product.image_url}
+          <Image
+            src={`${product.image_url}?w=600&auto=format&fit=crop&q=80`}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            width={600}
+            height={400}
+            decoding="async"
+            priority={index < 2}
+            loading={index < 2 ? undefined : "lazy"}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 will-change-transform"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted">
-            <Package className="h-14 w-14 text-muted-foreground/50" />
+          <div className="w-full h-full flex items-center justify-center bg-muted dark:bg-zinc-800">
+            <Package className="h-14 w-14 text-muted-foreground/50 dark:text-zinc-600" />
           </div>
         )}
-
-        {/* Badge Kategori & Dusun */}
-        <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
-          {/* Label Kategori */}
-          {product.categories?.name && (
-            <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-700 border border-emerald-200 shadow-sm">
-              {product.categories.name}
-            </div>
-          )}
-
-          {/* Label Dusun */}
-          {product.profiles?.dusun?.name && (
-            <div className="bg-amber-50/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium text-amber-700 border border-amber-200 shadow-sm flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5" />
-              {product.profiles.dusun.name}
-            </div>
-          )}
-        </div>
       </div>
 
-      {/* Detail Produk */}
-      <div className="p-5 space-y-3 flex-grow flex flex-col">
-        {/* Nama Produk */}
-        <div className="h-14 flex items-start">
-          <h3 className="font-semibold text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors leading-snug">
-            {product.name}
-          </h3>
-        </div>
+      {/* Detail produk */}
+      <div className="p-5 space-y-3 flex flex-col flex-grow">
+        <h3 className="font-semibold text-lg text-foreground dark:text-white line-clamp-2 group-hover:text-primary transition-colors leading-snug h-14">
+          {product.name}
+        </h3>
 
-        {/* Nama Toko */}
         {showStore && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-zinc-400">
             <Store className="h-4 w-4 flex-shrink-0" />
             <span className="truncate">
               {product.profiles?.store_name || profileName || "Toko"}
@@ -83,21 +64,18 @@ export const ProductCard = ({
           </div>
         )}
 
-        {/* Harga & View */}
-        <div className="flex justify-between items-center pt-3 border-t border-border mt-auto">
-          <span className="text-xl font-bold text-primary">
+        <div className="flex justify-between items-center pt-3 border-t border-border dark:border-zinc-700 mt-auto">
+          <span className="text-xl font-bold text-primary dark:text-blue-400">
             Rp {product.price?.toLocaleString("id-ID")}
           </span>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground dark:text-zinc-400">
             <Eye className="h-3 w-3" />
             <span>{product.views || 0}</span>
           </div>
         </div>
 
-        {/* Konten tambahan */}
         {children && <div className="pt-3">{children}</div>}
 
-        {/* Tombol Edit (khusus dashboard) */}
         {showEdit && (
           <div className="flex gap-2 pt-3">
             <Link
@@ -109,8 +87,8 @@ export const ProductCard = ({
             <span
               className={`flex-1 text-center py-2 text-sm font-medium rounded-lg ${
                 product.is_active
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-500"
+                  ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200"
+                  : "bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400"
               }`}
             >
               {product.is_active ? "Aktif" : "Nonaktif"}
@@ -118,6 +96,14 @@ export const ProductCard = ({
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
-};
+}, (prevProps, nextProps) => {
+  return (
+    prevProps.product.id === nextProps.product.id &&
+    prevProps.product.views === nextProps.product.views &&
+    prevProps.product.is_active === nextProps.product.is_active &&
+    prevProps.showEdit === nextProps.showEdit &&
+    prevProps.showStore === nextProps.showStore
+  );
+});

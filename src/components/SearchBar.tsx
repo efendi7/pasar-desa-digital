@@ -35,13 +35,15 @@ export default function SearchBar() {
           .limit(3);
 
         setSearchResults(
-          suggestion?.length ? suggestion.map((s) => ({ ...s, isSuggestion: true })) : []
+          suggestion?.length
+            ? suggestion.map((s) => ({ ...s, isSuggestion: true }))
+            : []
         );
       }
     };
 
     fetchProducts();
-  }, [searchQuery]);
+  }, [searchQuery, supabase]);
 
   const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchQuery.trim() !== '') {
@@ -51,29 +53,45 @@ export default function SearchBar() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative w-full max-w-[220px] sm:max-w-[260px]">
+      {/* Input search */}
       <input
         type="text"
         placeholder="Cari produk..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         onKeyDown={handleSearchSubmit}
-        className="pl-8 pr-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        className="pl-8 pr-3 py-2 w-full rounded-lg border border-gray-200 dark:border-zinc-700 
+                   bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 
+                   placeholder:text-gray-400 dark:placeholder:text-gray-500 
+                   focus:outline-none focus:ring-2 focus:ring-purple-500 
+                   shadow-sm transition-all text-sm"
       />
-      <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400 dark:text-gray-300" />
 
+      {/* Icon search */}
+      <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400 dark:text-gray-300" />
+
+      {/* Dropdown hasil pencarian */}
       {searchQuery && searchResults.length > 0 && (
-        <div className="absolute left-0 top-full mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg z-50">
+        <div className="absolute left-0 top-full mt-2 w-full rounded-lg border border-gray-200 dark:border-zinc-700 
+                        bg-white dark:bg-zinc-900 shadow-lg overflow-hidden z-50 transition-all text-sm">
           {searchResults.map((p) => (
             <Link
               key={p.id}
               href={`/products/${p.id}`}
-              className={`block px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-600 ${
-                p.isSuggestion ? 'italic text-gray-500 dark:text-gray-300' : ''
-              }`}
               onClick={() => setSearchQuery('')}
+              className={`block px-3 py-2 
+                          hover:bg-gray-50 dark:hover:bg-zinc-800 
+                          text-gray-700 dark:text-gray-200 
+                          ${
+                            p.isSuggestion
+                              ? 'italic text-gray-500 dark:text-gray-400'
+                              : ''
+                          }`}
             >
-              {p.isSuggestion ? `Apakah yang kamu maksud: ${p.name}?` : p.name}
+              {p.isSuggestion
+                ? `Apakah yang kamu maksud: ${p.name}?`
+                : p.name}
             </Link>
           ))}
         </div>

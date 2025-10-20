@@ -17,67 +17,61 @@ export const ProductsSection = ({ products }: ProductsSectionProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [activeFilter, setActiveFilter] = useState<"latest" | "popular">("latest");
 
-  // ✅ Memoize kalkulasi produk untuk menghindari sorting berulang
-  const latestProducts = useMemo(() => 
-    [...products]
-      .sort((a, b) => (b.id > a.id ? 1 : -1))
-      .slice(0, 10),
-    [products]
-  );
+  // ✅ Memoized sorting
+  const sortedProducts = useMemo(() => {
+    const byLatest = [...products]
+      .sort((a, b) => {
+        const dateA = new Date(a.created_at || 0).getTime();
+        const dateB = new Date(b.created_at || 0).getTime();
+        return dateB - dateA;
+      })
+      .slice(0, 10);
 
-  const popularProducts = useMemo(() => 
-    [...products]
+    const byPopular = [...products]
       .sort((a, b) => (b.views || 0) - (a.views || 0))
-      .slice(0, 10),
-    [products]
-  );
+      .slice(0, 10);
 
-  const displayedProducts = activeFilter === "latest" ? latestProducts : popularProducts;
+    return { byLatest, byPopular };
+  }, [products]);
 
-  // ✅ Optimasi IntersectionObserver dengan cleanup yang benar
+  const displayedProducts =
+    activeFilter === "latest" ? sortedProducts.byLatest : sortedProducts.byPopular;
+
+  // ✅ IntersectionObserver animation
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
 
     const items = section.querySelectorAll(".animate-fade-up");
-    if (items.length === 0) return;
-
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add("opacity-100", "translate-y-0");
-            // ✅ Unobserve setelah animasi untuk performa
             observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.1, rootMargin: '50px' }
+      { threshold: 0.1, rootMargin: "50px" }
     );
 
     items.forEach((item) => observer.observe(item));
+    return () => observer.disconnect();
+  }, [displayedProducts]);
 
-    return () => {
-      items.forEach((item) => observer.unobserve(item));
-      observer.disconnect();
-    };
-  }, [displayedProducts]); // ✅ Hanya re-run saat produk berubah
-
-  // Reset scroll position saat filter berubah
+  // ✅ Reset scroll when filter changes
   useEffect(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({ left: 0, behavior: "smooth" });
     }
   }, [activeFilter]);
 
-  // ✅ Memoize scroll handler dengan useCallback
+  // ✅ Scroll handler (memoized)
   const handleScroll = useCallback((direction: "left" | "right") => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // ✅ Hitung scroll amount tanpa querySelector
-    const scrollAmount = container.offsetWidth * 0.8; // Scroll 80% dari container width
-    
+    const scrollAmount = container.offsetWidth * 0.8;
     container.scrollBy({
       left: direction === "right" ? scrollAmount : -scrollAmount,
       behavior: "smooth",
@@ -86,6 +80,7 @@ export const ProductsSection = ({ products }: ProductsSectionProps) => {
 
   return (
     <section ref={sectionRef} id="products" className="space-y-10 px-4 sm:px-8">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 opacity-0 translate-y-6 animate-fade-up transition-opacity transition-transform duration-700">
         <div>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground flex items-center gap-2">
@@ -109,11 +104,7 @@ export const ProductsSection = ({ products }: ProductsSectionProps) => {
         </div>
 
         <div className="flex flex-wrap gap-3 items-center w-full sm:w-auto">
-          <FilterToggle 
-            activeFilter={activeFilter}
-            onFilterChange={setActiveFilter}
-          />
-          
+          <FilterToggle activeFilter={activeFilter} onFilterChange={setActiveFilter} />
           <Button
             variant="ghost"
             className="group hover:bg-primary/10 hover:text-primary transition-colors hidden sm:flex"
@@ -127,6 +118,7 @@ export const ProductsSection = ({ products }: ProductsSectionProps) => {
         </div>
       </div>
 
+      {/* Produk List */}
       {displayedProducts.length === 0 ? (
         <div className="animate-fade-up bg-card rounded-2xl shadow-lg p-16 text-center border border-border opacity-0 translate-y-6 transition-opacity transition-transform duration-700">
           <div className="mb-4 flex justify-center">
@@ -134,9 +126,7 @@ export const ProductsSection = ({ products }: ProductsSectionProps) => {
               <Store className="h-10 w-10 text-muted-foreground" />
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-foreground mb-2">
-            Belum Ada Produk
-          </h3>
+          <h3 className="text-2xl font-bold text-foreground mb-2">Belum Ada Produk</h3>
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             Produk dari UMKM akan ditampilkan di sini
           </p>
@@ -151,12 +141,11 @@ export const ProductsSection = ({ products }: ProductsSectionProps) => {
         <div className="relative">
           <div
             ref={scrollContainerRef}
-            className="flex gap-6 overflow-x-auto no-scrollbar scroll-smooth py-4 pb-8 xl:pb-10 scroll-snap-x"
+            className="flex gap-6 overflow-x-auto no-scrollbar scroll-smooth py-4 pb-8 xl:pb-10"
             style={{
               maskImage: "linear-gradient(to right, black 85%, transparent)",
-              // ✅ Optimize scroll performance
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
             }}
           >
             {displayedProducts.map((product, index) => (
@@ -193,6 +182,7 @@ export const ProductsSection = ({ products }: ProductsSectionProps) => {
         </div>
       )}
 
+      {/* Tombol "Lihat Semua" untuk mobile */}
       <div className="text-center">
         <Button
           variant="outline"

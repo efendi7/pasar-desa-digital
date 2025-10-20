@@ -7,7 +7,7 @@ interface PageHeaderProps {
   subtitle?: string;
   count?: number;
   actionButton?: ReactNode;
-  icon?: ReactNode; // Added to support icon prop used in AdminDashboard
+  icon?: ReactNode; // untuk ikon opsional
   gradientFrom?: string;
   gradientTo?: string;
 }
@@ -23,17 +23,22 @@ export const PageHeader = ({
 }: PageHeaderProps) => {
   return (
     <div
-      className={`bg-gradient-to-r ${gradientFrom} ${gradientTo} px-6 sm:px-8 py-6 border-b border-green-200`}
-    >
+  className={`bg-gradient-to-r ${gradientFrom} ${gradientTo} dark:from-zinc-800 dark:to-zinc-900 px-6 sm:px-8 py-6 border-b border-green-200 dark:border-green-700`}
+>
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             {icon}
             {title}
           </h1>
-          {subtitle && <p className="text-gray-600 mt-1">{subtitle}</p>}
+          {subtitle && (
+            <p className="text-gray-600 dark:text-zinc-300 mt-1">{subtitle}</p>
+          )}
           {count !== undefined && (
-            <p className="text-gray-600 mt-1">Total {count} item</p>
+            <p className="text-gray-600 dark:text-zinc-300 mt-1">
+              Total {count} item
+            </p>
           )}
         </div>
         {actionButton && <div>{actionButton}</div>}

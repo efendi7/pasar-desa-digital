@@ -95,19 +95,20 @@ export default function Navbar() {
             <SearchBar />
 
             {/* Admin Panel */}
-            {isAdmin && (
-              <Link
-                href="/admin/dashboard"
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  pathname?.startsWith('/admin')
-                    ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900'
-                    : 'text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900'
-                }`}
-              >
-                <Shield className="w-4 h-4" />
-                Admin Panel
-              </Link>
-            )}
+{isAdmin && (
+  <Link
+    href="/admin/dashboard"
+    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+      pathname?.startsWith('/admin')
+        ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900'
+        : 'text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900'
+    }`}
+  >
+    <Shield className="w-4 h-4 flex-shrink-0" />
+    <span className="whitespace-nowrap">Admin Panel</span>
+  </Link>
+)}
+
           </div>
 
           {/* Right Side */}
@@ -117,12 +118,21 @@ export default function Navbar() {
               <span className="absolute top-0 right-0 inline-block w-2 h-2 bg-red-500 rounded-full" />
             </div>
 
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors hidden lg:flex"
-            >
-              {isDarkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-700 dark:text-gray-300" />}
-            </button>
+           <button
+  onClick={toggleDarkMode}
+  className="flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 dark:border-zinc-700 
+             bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 
+             transition-all"
+  aria-label="Toggle Dark Mode"
+>
+  {isDarkMode ? (
+    <Sun className="w-5 h-5 text-yellow-400" />
+  ) : (
+    <Moon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+  )}
+</button>
+
+
 
             <ProfileDropdown
               user={user}
@@ -143,15 +153,17 @@ export default function Navbar() {
             </motion.button>
           </div>
         </div>
+<MobileMenu
+  isMenuOpen={isMenuOpen}
+  setIsMenuOpen={setIsMenuOpen}
+  user={user}
+  profile={profile}
+  isAdmin={isAdmin}
+  handleLogout={handleLogout}
+  toggleDarkMode={toggleDarkMode}
+  isDarkMode={isDarkMode}
+/>
 
-        <MobileMenu
-          isMenuOpen={isMenuOpen}
-          setIsMenuOpen={setIsMenuOpen}
-          user={user}
-          profile={profile}
-          isAdmin={isAdmin}
-          handleLogout={handleLogout}
-        />
       </div>
     </nav>
   );

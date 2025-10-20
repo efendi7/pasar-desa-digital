@@ -135,16 +135,27 @@ export const HowItWorks = () => {
         `}
       </style>
 
+      {/* Perubahan di sini: 
+        - bg-gray-50 -> bg-zinc-50
+        - dark:bg-gray-950 -> dark:bg-zinc-950
+      */}
       <section
         ref={sectionRef}
-        className="py-16 md:py-24 bg-gray-50 dark:bg-gray-950 relative overflow-hidden"
+        className="py-16 md:py-24 bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden"
       >
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+            {/* Perubahan di sini: 
+              - text-gray-900 -> text-zinc-900
+            */}
+            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white">
               Mulai Berjualan dalam 3 Langkah Mudah
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 text-lg max-w-2xl mx-auto">
+            {/* Perubahan di sini: 
+              - text-gray-600 -> text-zinc-600
+              - dark:text-gray-400 -> dark:text-zinc-400
+            */}
+            <p className="text-zinc-600 dark:text-zinc-400 text-lg max-w-2xl mx-auto">
               Platform kami dirancang agar UMKM bisa go-online dengan cepat dan tanpa biaya.
             </p>
           </div>
@@ -154,21 +165,29 @@ export const HowItWorks = () => {
               const Icon = step.icon;
               return (
                 <div
-  key={step.title}
-  className={`relative z-10 ${
-    index === 0
-      ? "opacity-100" // card pertama langsung tampil penuh
-      : isVisible
-      ? "animate-card"
-      : "opacity-0"
-  }`}
-  style={{
-    animationDelay: index === 0 ? "0s" : `${index * 0.5}s`,
-  }}
->
-
-                  <div className="relative bg-white dark:bg-gray-900 rounded-2xl p-8 text-center h-full shadow-lg hover:shadow-2xl active:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-800 group hover:-translate-y-2 active:-translate-y-2">
-                    <span className="absolute top-4 right-6 text-7xl font-black text-gray-100 dark:text-gray-800 -z-10">
+                  key={step.title}
+                  className={`relative z-10 ${
+                    index === 0
+                      ? "opacity-100" // card pertama langsung tampil penuh
+                      : isVisible
+                      ? "animate-card"
+                      : "opacity-0"
+                  }`}
+                  style={{
+                    animationDelay: index === 0 ? "0s" : `${index * 0.5}s`,
+                  }}
+                >
+                  {/* Perubahan di sini: 
+                    - dark:bg-gray-900 -> dark:bg-zinc-900
+                    - border-gray-200 -> border-zinc-200
+                    - dark:border-gray-800 -> dark:border-zinc-800
+                  */}
+                  <div className="relative bg-white dark:bg-zinc-900 rounded-2xl p-8 text-center h-full shadow-lg hover:shadow-2xl active:shadow-2xl transition-all duration-300 border border-zinc-200 dark:border-zinc-800 group hover:-translate-y-2 active:-translate-y-2">
+                    {/* Perubahan di sini: 
+                      - text-gray-100 -> text-zinc-100
+                      - dark:text-gray-800 -> dark:text-zinc-800
+                    */}
+                    <span className="absolute top-4 right-6 text-7xl font-black text-zinc-100 dark:text-zinc-800 -z-10">
                       {index + 1}
                     </span>
 
@@ -186,10 +205,17 @@ export const HowItWorks = () => {
                     >
                       {step.step}
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                    {/* Perubahan di sini: 
+                      - text-gray-900 -> text-zinc-900
+                    */}
+                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-3">
                       {step.title}
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                    {/* Perubahan di sini: 
+                      - text-gray-600 -> text-zinc-600
+                      - dark:text-gray-400 -> dark:text-zinc-400
+                    */}
+                    <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed">
                       {step.desc}
                     </p>
                   </div>

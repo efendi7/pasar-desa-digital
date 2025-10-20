@@ -50,15 +50,17 @@ export default function AddProductPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 pt-4 pb-8">
-      {/* 🧭 Breadcrumb Navigation */}
-      <Breadcrumb
-        items={[
-          { href: '/dashboard', label: 'Beranda', icon: <Home className="w-4 h-4 mr-1" /> },
-          { href: '/dashboard/products', label: 'Daftar Produk', icon: <Package className="w-4 h-4 mr-1" /> },
-          { label: 'Tambah Produk' },
-        ]}
-      />
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-8">
+      {/* 🧭 Breadcrumb Navigation - ✅ Tambah wrapper dengan margin bottom */}
+      <div className="mb-6">
+        <Breadcrumb
+          items={[
+            { href: '/dashboard', label: 'Beranda', icon: <Home className="w-4 h-4 mr-1" /> },
+            { href: '/dashboard/products', label: 'Daftar Produk', icon: <Package className="w-4 h-4 mr-1" /> },
+            { label: 'Tambah Produk' },
+          ]}
+        />
+      </div>
 
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
         <PageHeader title="Tambah Produk Baru" subtitle="Lengkapi informasi produk Anda" />

@@ -17,10 +17,12 @@ export interface Product {
   price: number;
   image_url: string | null;
   views: number;
-  // Mengubah dari objek tunggal menjadi array objek
+  created_at?: string; // ✅ tambahkan ini
+  updated_at?: string; // ✅ opsional, tapi bagus buat jaga konsistensi
   profiles: { store_name: string }[] | null;
   categories: { name: string }[] | null;
 }
+
 
 export interface Category {
   id: string;
@@ -41,20 +43,21 @@ export default async function IndexPage() {
 
   console.log("Latest Server Stats Data:", statsData);
 
-  const [productsResult, categoriesResult] = await Promise.all([
-    supabase
-      .from("products")
-      .select(`
-        id, name, price, image_url, views,
-        profiles ( store_name ),
-        categories ( name )
-      `)
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(8),
+ const [productsResult, categoriesResult] = await Promise.all([
+  supabase
+    .from("products")
+    .select(`
+      id, name, price, image_url, views, created_at, updated_at,
+      profiles ( store_name ),
+      categories ( name )
+    `)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .limit(8),
 
-    supabase.from("categories").select("id, name, slug").order("name"),
-  ]);
+  supabase.from("categories").select("id, name, slug").order("name"),
+]);
+
 
   const products = productsResult.data || [];
   const categories = categoriesResult.data || [];
