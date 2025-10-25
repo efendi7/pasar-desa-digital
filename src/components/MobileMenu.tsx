@@ -1,28 +1,28 @@
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
+import { usePathname, useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/utils/supabase/client'
 import {
-  BarChart3,
+  LayoutDashboard,
   Boxes,
-  Settings,
+  LucidePencil,
   LogOut,
   Shield,
   Search,
-} from 'lucide-react';
+} from 'lucide-react'
 
 interface MobileMenuProps {
-  isMenuOpen: boolean;
-  setIsMenuOpen: (isOpen: boolean) => void;
-  user: any;
-  profile: any;
-  isAdmin: boolean;
-  handleLogout: () => void;
-  toggleDarkMode?: () => void;   // 🆕
-  isDarkMode?: boolean;          // 🆕
+  isMenuOpen: boolean
+  setIsMenuOpen: (isOpen: boolean) => void
+  user: any
+  profile: any
+  isAdmin?: boolean
+  handleLogout?: () => Promise<void>
+  toggleDarkMode?: () => void
+  isDarkMode?: boolean
+  isPublic?: boolean
 }
-
 
 export default function MobileMenu({
   isMenuOpen,
@@ -32,18 +32,24 @@ export default function MobileMenu({
   isAdmin,
   handleLogout,
 }: MobileMenuProps) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const isActive = (path: string) => pathname === path;
+  const pathname = usePathname()
+  const router = useRouter()
+  const isActive = (path: string) => pathname === path
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const supabase = createClient();
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const supabase = createClient()
+
+  // Ambil data yang benar dari profile
+  const fullName = profile?.full_name || 'User Tanpa Nama'
+  const storeName = profile?.store_name || '-'
+  const avatarUrl = profile?.avatar_url || '/default-avatar.png'
+  const email = user?.email || '-'
 
   useEffect(() => {
     if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
+      setSearchResults([])
+      return
     }
 
     const fetchProducts = async () => {
@@ -51,35 +57,35 @@ export default function MobileMenu({
         .from('products')
         .select('id, name')
         .ilike('name', `%${searchQuery}%`)
-        .limit(5);
+        .limit(5)
 
       if (data && data.length > 0) {
-        setSearchResults(data.map((p) => ({ ...p, isSuggestion: false })));
+        setSearchResults(data.map((p) => ({ ...p, isSuggestion: false })))
       } else {
         const { data: suggestion } = await supabase
           .from('products')
           .select('id, name')
           .ilike('name', `%${searchQuery.slice(0, 3)}%`)
-          .limit(3);
+          .limit(3)
 
         setSearchResults(
           suggestion && suggestion.length > 0
             ? suggestion.map((s) => ({ ...s, isSuggestion: true }))
             : []
-        );
+        )
       }
-    };
+    }
 
-    fetchProducts();
-  }, [searchQuery]);
+    fetchProducts()
+  }, [searchQuery])
 
   const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchQuery.trim()) {
-      router.push(`/search?query=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery('');
-      setIsMenuOpen(false);
+      router.push(`/search?query=${encodeURIComponent(searchQuery.trim())}`)
+      setSearchQuery('')
+      setIsMenuOpen(false)
     }
-  };
+  }
 
   return (
     <AnimatePresence>
@@ -92,6 +98,33 @@ export default function MobileMenu({
           className="lg:hidden border-t border-gray-100 dark:border-zinc-800 overflow-hidden"
         >
           <div className="py-4 space-y-1 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md px-4 text-gray-800 dark:text-gray-200">
+            
+            {/* ===== PROFIL USER ===== */}
+            {user && profile && (
+              <div className="mb-5 text-center">
+  <img
+    src={avatarUrl}
+    alt="avatar"
+    className="w-16 h-16 rounded-full mx-auto mb-2 border-2 border-green-200 dark:border-green-500 object-cover shadow-sm"
+    onError={(e) => {
+      e.currentTarget.src = '/default-avatar.png'
+    }}
+  />
+  {/* store_name lebih besar dan tebal */}
+  <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+    {storeName}
+  </div>
+  {/* full_name lebih kecil dan ringan */}
+  <div className="text-sm text-gray-600 dark:text-gray-400">
+    {fullName}
+  </div>
+  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+    {email}
+  </div>
+</div>
+
+            )}
+
             {/* ===== SEARCH BAR ===== */}
             <div className="relative mb-4">
               <input
@@ -110,11 +143,13 @@ export default function MobileMenu({
                       key={p.id}
                       href={`/products/${p.id}`}
                       className={`block px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-zinc-700 ${
-                        p.isSuggestion ? 'italic text-gray-500 dark:text-gray-400' : ''
+                        p.isSuggestion
+                          ? 'italic text-gray-500 dark:text-gray-400'
+                          : ''
                       }`}
                       onClick={() => {
-                        setSearchQuery('');
-                        setIsMenuOpen(false);
+                        setSearchQuery('')
+                        setIsMenuOpen(false)
                       }}
                     >
                       {p.isSuggestion
@@ -126,33 +161,10 @@ export default function MobileMenu({
               )}
             </div>
 
-            {/* ===== NAV LINKS ===== */}
-            <Link
-              href="/"
-              onClick={() => setIsMenuOpen(false)}
-              className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/')
-                  ? 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/30'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-800'
-              }`}
-            >
-              Beranda
-            </Link>
-
-            <Link
-              href="/products"
-              onClick={() => setIsMenuOpen(false)}
-              className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/products')
-                  ? 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/30'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-800'
-              }`}
-            >
-              Produk
-            </Link>
-
+           
             <div className="h-px bg-gray-100 dark:bg-zinc-800 my-3" />
 
+            {/* ===== MENU AKUN / LOGIN ===== */}
             {user ? (
               <div>
                 <div className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
@@ -164,9 +176,9 @@ export default function MobileMenu({
                     onClick={() => setIsMenuOpen(false)}
                     className="flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-100 dark:border-zinc-700 hover:border-green-300 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all group"
                   >
-                    <BarChart3 className="w-6 h-6 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform" />
+                    <LayoutDashboard className="w-6 h-6 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform" />
                     <span className="text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-green-700 dark:group-hover:text-green-400 text-center">
-                      Dashboard
+                      Dashboard Anda
                     </span>
                   </Link>
 
@@ -177,7 +189,7 @@ export default function MobileMenu({
                   >
                     <Boxes className="w-6 h-6 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform" />
                     <span className="text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-green-700 dark:group-hover:text-green-400 text-center">
-                      Produk Saya
+                      Produk Anda
                     </span>
                   </Link>
 
@@ -186,9 +198,9 @@ export default function MobileMenu({
                     onClick={() => setIsMenuOpen(false)}
                     className="flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-100 dark:border-zinc-700 hover:border-green-300 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all group"
                   >
-                    <Settings className="w-6 h-6 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform" />
+                    <LucidePencil className="w-6 h-6 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform" />
                     <span className="text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-green-700 dark:group-hover:text-green-400 text-center">
-                      Pengaturan
+                      Edit Profil Toko
                     </span>
                   </Link>
 
@@ -238,5 +250,5 @@ export default function MobileMenu({
         </motion.div>
       )}
     </AnimatePresence>
-  );
+  )
 }

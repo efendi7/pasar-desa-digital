@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search } from 'lucide-react';
+import { Search, Home, Package } from 'lucide-react';
 import { ProductCard } from '@/components/ui/ProductCard';
 import { Pagination } from '@/components/Pagination';
 import { PageHeader } from '@/components/PageHeader';
@@ -161,12 +161,12 @@ export default function ProductsClient({
 
       {/* Breadcrumb */}
       <Breadcrumb
-        items={[
-          { label: 'Beranda', href: '/' },
-          { label: 'Katalog Produk' },
-        ]}
-        className="dark:text-zinc-400"
-      />
+  items={[
+    { label: 'Beranda', href: '/', icon: <Home className="w-4 h-4 mr-1" /> },
+    { label: 'Katalog Produk', icon: <Package className="w-4 h-4 mr-1" /> },
+  ]}
+  className="dark:text-zinc-400"
+/>
 
       {/* Page Header */}
       <PageHeader

@@ -34,9 +34,21 @@ export default function PublicStorePage() {
     async function fetchStore() {
       const storeId = Array.isArray(id) ? id[0] : id;
 
+      // Ambil data profil toko + join dusun
       const { data: storeData, error: storeError } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          id,
+          full_name,
+          store_name,
+          store_description,
+          whatsapp_number,
+          avatar_url,
+          latitude,
+          longitude,
+          created_at,
+          dusun(name, slug)
+        `)
         .eq('id', storeId)
         .single();
 
@@ -47,9 +59,18 @@ export default function PublicStorePage() {
         return;
       }
 
+      // Ambil data produk toko
       const { data: productsData, error: productsError } = await supabase
         .from('products')
-        .select('id, name, price, image_url, views, categories(name)')
+        .select(`
+          id,
+          name,
+          price,
+          image_url,
+          views,
+          created_at,
+          categories(name)
+        `)
         .eq('owner_id', storeId)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
@@ -96,7 +117,8 @@ export default function PublicStorePage() {
   }
 
   const totalProducts = store.products?.length || 0;
-  const totalViews = store.products?.reduce((sum: number, p: any) => sum + (p.views || 0), 0) || 0;
+  const totalViews =
+    store.products?.reduce((sum: number, p: any) => sum + (p.views || 0), 0) || 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -124,8 +146,15 @@ export default function PublicStorePage() {
                 <h1 className="text-3xl font-bold text-gray-900 mb-1">
                   {store.store_name}
                 </h1>
-                <p className="text-gray-600 mb-4">{store.full_name}</p>
-                
+                <p className="text-gray-600 mb-2">{store.full_name}</p>
+
+                {store.dusun?.name && (
+                  <p className="text-sm text-gray-600 flex items-center justify-center sm:justify-start gap-1 mb-4">
+                    <MapPin className="w-4 h-4 text-green-600" />
+                    <span>Dusun {store.dusun.name}</span>
+                  </p>
+                )}
+
                 {/* Stats */}
                 <div className="flex flex-wrap justify-center sm:justify-start gap-4">
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg shadow-sm">
@@ -181,7 +210,7 @@ export default function PublicStorePage() {
                 <h2 className="text-base font-semibold text-gray-900 mb-2">
                   Lokasi Toko
                 </h2>
-                
+
                 <div className="rounded-xl overflow-hidden border border-gray-200 mb-3">
                   <StoreMap
                     latitude={store.latitude}
@@ -190,12 +219,14 @@ export default function PublicStorePage() {
                     readonly={true}
                   />
                 </div>
-                
+
                 <div className="p-3 bg-green-50 border border-green-200 rounded-xl">
                   <div className="flex items-start gap-2">
                     <MapPin className="w-4 h-4 text-green-700 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-green-900 mb-0.5">Koordinat:</p>
+                      <p className="text-sm font-medium text-green-900 mb-0.5">
+                        Koordinat:
+                      </p>
                       <p className="font-mono text-sm text-green-800">
                         {store.latitude.toFixed(6)}, {store.longitude.toFixed(6)}
                       </p>
@@ -240,20 +271,25 @@ export default function PublicStorePage() {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="p-4">
                       <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">
                         {product.name}
                       </h3>
-                      
+
                       {product.categories?.name && (
                         <p className="text-xs text-gray-500 mb-2 px-2 py-1 bg-gray-100 rounded inline-block">
                           {product.categories.name}
                         </p>
                       )}
-                      
+
                       <p className="text-lg font-bold text-green-600 mt-2">
                         Rp {Number(product.price).toLocaleString('id-ID')}
+                      </p>
+
+                      <p className="text-xs text-gray-400 mt-1">
+                        Ditambahkan pada{' '}
+                        {new Date(product.created_at).toLocaleDateString('id-ID')}
                       </p>
                     </div>
                   </div>
@@ -262,7 +298,9 @@ export default function PublicStorePage() {
             ) : (
               <div className="text-center py-12">
                 <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg">Belum ada produk di toko ini.</p>
+                <p className="text-gray-500 text-lg">
+                  Belum ada produk di toko ini.
+                </p>
               </div>
             )}
           </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Home, Package, Upload } from 'lucide-react';
+import { Home, Package, Upload, Plus, Store } from 'lucide-react';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { PageHeader } from '@/components/PageHeader';
@@ -15,8 +15,6 @@ import { SecondaryButton } from '@/components/SecondaryButton';
 
 export default function AddProductPage() {
   const { categories, dusuns, loading, error, submitProduct } = useAddProduct();
-
-  console.log('Isi state dusuns:', dusuns);
 
   const [form, setForm] = useState({
     name: '',
@@ -50,25 +48,31 @@ export default function AddProductPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-8">
-      {/* 🧭 Breadcrumb Navigation - ✅ Tambah wrapper dengan margin bottom */}
-      <div className="mb-6">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-8 text-foreground transition-colors duration-300">
+      {/* 🧭 Breadcrumb */}
+      <div className="mb-6 bg-transparent">
         <Breadcrumb
           items={[
-            { href: '/dashboard', label: 'Beranda', icon: <Home className="w-4 h-4 mr-1" /> },
+            { href: '/dashboard', label: 'Dashboard Toko', icon: <Store className="w-4 h-4 mr-1" /> },
             { href: '/dashboard/products', label: 'Daftar Produk', icon: <Package className="w-4 h-4 mr-1" /> },
-            { label: 'Tambah Produk' },
+            { label: 'Tambah Produk', icon: <Plus className="w-4 h-4 mr-1" /> },
           ]}
         />
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
-        <PageHeader title="Tambah Produk Baru" subtitle="Lengkapi informasi produk Anda" />
+      {/* 🌗 Container Card */}
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 transition-colors duration-300">
+        <PageHeader 
+          title="Tambah Produk Baru" 
+          subtitle="Lengkapi informasi produk Anda"
+        />
 
         <form onSubmit={handleSubmit} className="p-8 space-y-8">
           {/* 📸 Upload Gambar */}
           <div>
-            <label className="font-semibold mb-4 block">Foto Produk *</label>
+            <label className="font-semibold mb-4 block text-foreground dark:text-zinc-200">
+              Foto Produk *
+            </label>
             <ImageUploader slots={form.images} previews={previews} onChange={handleImageChange} />
           </div>
 
@@ -123,7 +127,7 @@ export default function AddProductPage() {
 
           {/* ⚠️ Error Message */}
           {error && (
-            <div className="bg-red-50 border text-red-700 px-4 py-3 rounded-xl">
+            <div className="bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl">
               ⚠️ {error}
             </div>
           )}
@@ -139,14 +143,10 @@ export default function AddProductPage() {
               Simpan Produk
             </PrimaryButton>
 
-            <SecondaryButton
-              href="/dashboard/products"
-              className="sm:w-auto"
-            >
+            <SecondaryButton href="/dashboard/products" className="sm:w-auto">
               Batal
             </SecondaryButton>
           </div>
-
         </form>
       </div>
     </div>

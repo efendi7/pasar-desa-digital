@@ -71,7 +71,7 @@ export default function AdminProductsPage() {
     }
   };
 
-  const handleViewDetail = (id: string) => router.push(`/products/${id}`);
+  const handleViewDetail = (id: string) => router.push(`/admin/products/${id}`);
 
   if (adminLoading || loading) {
     return (
@@ -91,7 +91,7 @@ export default function AdminProductsPage() {
           </p>
         </div>
 
-        {/* === Filter === */}
+        {/* Filter */}
         <div className="flex gap-3">
           {['all', 'active', 'inactive'].map((status) => (
             <button

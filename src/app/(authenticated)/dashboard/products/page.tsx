@@ -1,12 +1,13 @@
 'use client';
 import { useState, useMemo, useCallback, memo } from 'react';
 import Link from 'next/link';
-import { Plus, Home, Eye } from 'lucide-react';
+import { Plus, Home, Eye, Store, Search } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { PageHeader } from '@/components/PageHeader';
-import { FiltersSection } from '@/components/FiltersSection';
+import { FormInput } from '@/components/FormInput';
+import { FormSelect } from '@/components/FormSelect';
 import { ProductStatusButton } from '@/components/ProductStatusButton';
 import { ProductImage } from '@/components/ProductImage';
 import { ActionButtons } from '@/components/ActionButtons';
@@ -167,6 +168,25 @@ export default function ProductsListPage() {
     setCurrentPage(1);
   }, []);
 
+  // ✅ Options untuk FormSelect
+  const statusOptions = [
+    { label: 'Semua Status', value: 'all' },
+    { label: 'Aktif', value: 'active' },
+    { label: 'Nonaktif', value: 'inactive' },
+  ];
+
+  const categoryOptions = [
+    { label: 'Semua Kategori', value: 'all' },
+    ...categories.map(cat => ({ label: cat.name, value: cat.id })),
+  ];
+
+  const sortOptions = [
+    { label: 'Terbaru', value: 'newest' },
+    { label: 'Terlama', value: 'oldest' },
+    { label: 'Paling Banyak Dilihat', value: 'most_views' },
+    { label: 'Paling Sedikit Dilihat', value: 'least_views' },
+  ];
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -191,7 +211,7 @@ export default function ProductsListPage() {
       <div className="mb-6">
         <Breadcrumb
           items={[
-            { href: '/dashboard', label: 'Beranda', icon: <Home className="w-4 h-4 mr-1" /> },
+            { href: '/dashboard', label: 'Dashboard Toko', icon: <Store className="w-4 h-4 mr-1" /> },
             { label: 'Daftar Produk' },
           ]}
         />
@@ -200,7 +220,7 @@ export default function ProductsListPage() {
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <PageHeader
           title="Kelola Produk"
-          subtitle="Daftar seluruh produk yang tersedia"
+          subtitle="Daftar seluruh produk Anda"
           count={products.length}
           actionButton={
             <Link
@@ -213,18 +233,47 @@ export default function ProductsListPage() {
           }
         />
 
+        {/* ✅ HANYA BAGIAN INI YANG DIGANTI - Filter dengan FormInput & FormSelect */}
         {products.length > 0 && (
-          <FiltersSection
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            filterStatus={filterStatus}
-            onStatusChange={setFilterStatus}
-            filterCategory={filterCategory}
-            onCategoryChange={setFilterCategory}
-            categories={categories}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-          />
+          <div className="p-6 sm:p-8 bg-gray-50 border-b border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Search Input */}
+              <FormInput
+                label="Cari Produk"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Nama atau deskripsi..."
+                icon={<Search className="w-5 h-5" />}
+              />
+
+              {/* Status Filter */}
+              <FormSelect
+                label="Status"
+                value={filterStatus}
+                onChange={(value) => setFilterStatus(value as FilterStatus)}
+                options={statusOptions}
+                placeholder="Pilih status..."
+              />
+
+              {/* Category Filter */}
+              <FormSelect
+                label="Kategori"
+                value={filterCategory}
+                onChange={setFilterCategory}
+                options={categoryOptions}
+                placeholder="Pilih kategori..."
+              />
+
+              {/* Sort By */}
+              <FormSelect
+                label="Urutkan"
+                value={sortBy}
+                onChange={(value) => setSortBy(value as SortByType)}
+                options={sortOptions}
+                placeholder="Pilih urutan..."
+              />
+            </div>
+          </div>
         )}
 
         <div className="p-6 sm:p-8">

@@ -207,13 +207,21 @@
   z-index: 1 !important;
 }
 
-/* Ensure header/navbar stays above map */
-header, 
-nav, 
-.navbar, 
+/* Biarkan nav transparan supaya komponen seperti Breadcrumb tidak punya background paksa */
+nav {
+  position: relative;
+  z-index: 50;
+  pointer-events: auto;
+  /* tidak ada background di sini */
+}
+
+/* Tetap beri background untuk header, navbar, dan top-bar */
+header,
+.navbar,
 .top-bar {
   position: relative;
   z-index: 50;
   background: var(--card);
   pointer-events: auto;
 }
+

@@ -6,7 +6,12 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { Search } from 'lucide-react';
 
-export default function SearchBar() {
+// Define props interface for SearchBar
+interface SearchBarProps {
+  className?: string; // Optional className prop
+}
+
+export default function SearchBar({ className }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const supabase = createClient();
@@ -53,7 +58,7 @@ export default function SearchBar() {
   };
 
   return (
-    <div className="relative w-full max-w-[220px] sm:max-w-[260px]">
+    <div className={`relative w-full max-w-[220px] sm:max-w-[260px] ${className}`}>
       {/* Input search */}
       <input
         type="text"

@@ -9,6 +9,7 @@ import { X, Menu, Sun, Moon, Bell } from 'lucide-react'
 import ProfileDropdown from './ProfileDropdown'
 import MobileMenu from './MobileMenu'
 import SearchBar from './SearchBar'
+import { useAdmin } from '@/hooks/useAdmin' // ✅ Tambahkan import useAdmin
 
 interface NavbarProps {
   onSidebarToggle: () => void
@@ -30,6 +31,7 @@ export default function Navbar({
   const dropdownRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
   const supabase = createClient()
+  const { isAdmin } = useAdmin() // ✅ cek apakah user admin
 
   useEffect(() => {
     const checkUser = async () => {
@@ -38,11 +40,11 @@ export default function Navbar({
       } = await supabase.auth.getUser()
       setUser(user)
       if (user) {
-       const { data: profileData } = await supabase
-  .from('profiles')
-  .select('store_name, full_name, avatar_url')
-  .eq('id', user.id)
-  .single()
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('store_name, full_name, avatar_url')
+          .eq('id', user.id)
+          .single()
 
         setProfile(profileData)
       }
@@ -73,12 +75,18 @@ export default function Navbar({
     window.location.href = '/'
   }
 
+  const isActive = (path: string) =>
+    pathname === path
+      ? 'text-green-600 font-semibold'
+      : 'text-gray-700 dark:text-gray-300 hover:text-green-500'
+
   return (
     <nav className="sticky top-0 z-40 transition-all duration-300 bg-white/95 backdrop-blur-xl shadow-md dark:bg-neutral-900/95 w-full">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
-          {/* === KIRI: Toggle Sidebar (Mobile) === */}
-          <div className="flex items-center gap-2">
+          {/* === KIRI: Sidebar toggle + Navigasi === */}
+          <div className="flex items-center gap-4">
+            {/* Tombol Sidebar (mobile) */}
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={onSidebarToggle}
@@ -91,11 +99,31 @@ export default function Navbar({
                 <Menu className="w-6 h-6 text-gray-700 dark:text-gray-300" />
               )}
             </motion.button>
+
+            {/* Navigasi utama (desktop) */}
+            <div className="hidden lg:flex items-center gap-6">
+              <Link href="/dashboard" className={isActive('/dashboard')}>
+                Dashboard
+              </Link>
+              <Link href="/products" className={isActive('/products')}>
+                Produk
+              </Link>
+              <Link href="/store" className={isActive('/store')}>
+                Toko
+              </Link>
+
+              {/* ✅ Tambahkan Admin Panel di kanan navigasi toko */}
+              {isAdmin && (
+                <Link href="/admin/dashboard" className={isActive('/admin')}>
+                  Admin Panel
+                </Link>
+              )}
+            </div>
           </div>
 
-          {/* === KANAN: SearchBar, Notif, Mode, Profile, Hamburger === */}
+          {/* === KANAN: SearchBar, Notifikasi, Mode, Profile, Hamburger === */}
           <div className="flex items-center gap-3">
-            {/* Search di pojok kanan */}
+            {/* SearchBar (desktop) */}
             <div className="hidden sm:block">
               <SearchBar className="w-48 sm:w-56" />
             </div>
@@ -127,7 +155,6 @@ export default function Navbar({
               setIsDropdownOpen={setIsDropdownOpen}
               handleLogout={handleLogout}
               dropdownRef={dropdownRef}
-              // isAdmin={false} // admin panel dihilangkan
             />
 
             {/* Hamburger kanan untuk Mobile Menu */}
@@ -152,7 +179,7 @@ export default function Navbar({
           setIsMenuOpen={onMobileMenuToggle}
           user={user}
           profile={profile}
-          isAdmin={false}
+          isAdmin={isAdmin}
           handleLogout={handleLogout}
           toggleDarkMode={toggleDarkMode}
           isDarkMode={isDarkMode}

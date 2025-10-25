@@ -7,7 +7,7 @@ interface PageHeaderProps {
   subtitle?: string;
   count?: number;
   actionButton?: ReactNode;
-  icon?: ReactNode; // untuk ikon opsional
+  icon?: ReactNode;
   gradientFrom?: string;
   gradientTo?: string;
 }
@@ -23,9 +23,12 @@ export const PageHeader = ({
 }: PageHeaderProps) => {
   return (
     <div
-  className={`bg-gradient-to-r ${gradientFrom} ${gradientTo} dark:from-zinc-800 dark:to-zinc-900 px-6 sm:px-8 py-6 border-b border-green-200 dark:border-green-700`}
->
-
+      className={`bg-gradient-to-r ${gradientFrom} ${gradientTo} 
+      dark:from-zinc-800 dark:to-zinc-900 
+      px-6 sm:px-8 py-6 
+      rounded-t-2xl
+      border-b border-green-200 dark:border-green-700`}
+    >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">

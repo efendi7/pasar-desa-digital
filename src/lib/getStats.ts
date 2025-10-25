@@ -26,10 +26,11 @@ export async function getStats() {
   const trendRes = await supabase.rpc("get_trend_percentage_weekly");
   console.timeEnd("Waktu Query Tren (LAMBAT)");
 
-  return {
-    umkm: umkmRes.count || 0,
-    products: productRes.count || 0,
-    views: viewsRes.data || 0, // Hasilnya sudah berupa angka total
-    trend: trendRes.data || 0,
-  };
+ return {
+  umkm: Number(umkmRes.count ?? 0),
+  products: Number(productRes.count ?? 0),
+  views: Number(viewsRes.data ?? 0),
+  trend: Number(trendRes.data ?? 0),
+};
+
 }
