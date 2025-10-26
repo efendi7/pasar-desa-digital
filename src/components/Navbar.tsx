@@ -1,14 +1,14 @@
 'use client'
-
-import { useState, useEffect, useRef } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { motion } from 'framer-motion'
-import { X, Menu, Sun, Moon, Bell } from 'lucide-react'
+import { toast } from 'sonner'
+import { Bell, Menu, X, Sun, Moon } from 'lucide-react'
 import ProfileDropdown from './ProfileDropdown'
 import MobileMenu from './MobileMenu'
 import SearchBar from './SearchBar'
+import { motion } from 'framer-motion'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 interface NavbarProps {
   onSidebarToggle: () => void
@@ -28,9 +28,10 @@ export default function Navbar({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const pathname = usePathname()
   const supabase = createClient()
+  const pathname = usePathname()
 
+  // === Fetch user & profile ===
   useEffect(() => {
     const checkUser = async () => {
       const {
@@ -38,18 +39,39 @@ export default function Navbar({
       } = await supabase.auth.getUser()
       setUser(user)
       if (user) {
-       const { data: profileData } = await supabase
-  .from('profiles')
-  .select('store_name, full_name, avatar_url')
-  .eq('id', user.id)
-  .single()
-
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('store_name, full_name, avatar_url, role')
+          .eq('id', user.id)
+          .single()
         setProfile(profileData)
       }
     }
     checkUser()
   }, [supabase])
 
+  // === Listen Realtime Only for Admin ===
+  useEffect(() => {
+    if (!profile || profile.role !== 'admin') return // hanya admin yang bisa listen
+
+    const channel = supabase
+      .channel('profiles-changes')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'profiles' },
+        (payload) => {
+          const newProfile = payload.new
+          toast.success(`🆕 Pengguna baru mendaftar: ${newProfile.full_name}`)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase, profile])
+
+  // === Dropdown Click Outside ===
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -77,7 +99,7 @@ export default function Navbar({
     <nav className="sticky top-0 z-40 transition-all duration-300 bg-white/95 backdrop-blur-xl shadow-md dark:bg-neutral-900/95 w-full">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
-          {/* === KIRI: Toggle Sidebar (Mobile) === */}
+          {/* === KIRI: Toggle Sidebar === */}
           <div className="flex items-center gap-2">
             <motion.button
               whileTap={{ scale: 0.9 }}
@@ -93,20 +115,21 @@ export default function Navbar({
             </motion.button>
           </div>
 
-          {/* === KANAN: SearchBar, Notif, Mode, Profile, Hamburger === */}
+          {/* === KANAN: Search, Notif, Mode, Profile === */}
           <div className="flex items-center gap-3">
-            {/* Search di pojok kanan */}
             <div className="hidden sm:block">
               <SearchBar className="w-48 sm:w-56" />
             </div>
 
-            {/* Notifikasi */}
-            <div className="relative hidden sm:flex">
-              <Bell className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-              <span className="absolute top-0 right-0 inline-block w-2 h-2 bg-red-500 rounded-full" />
-            </div>
+            {/* Notifikasi hanya admin */}
+            {profile?.role === 'admin' && (
+              <div className="relative hidden sm:flex">
+                <Bell className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+                <span className="absolute top-0 right-0 inline-block w-2 h-2 bg-red-500 rounded-full" />
+              </div>
+            )}
 
-            {/* Tombol Dark Mode */}
+            {/* Dark Mode Toggle */}
             <button
               onClick={toggleDarkMode}
               className="flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all"
@@ -119,7 +142,6 @@ export default function Navbar({
               )}
             </button>
 
-            {/* Profile Dropdown */}
             <ProfileDropdown
               user={user}
               profile={profile}
@@ -127,10 +149,9 @@ export default function Navbar({
               setIsDropdownOpen={setIsDropdownOpen}
               handleLogout={handleLogout}
               dropdownRef={dropdownRef}
-              // isAdmin={false} // admin panel dihilangkan
             />
 
-            {/* Hamburger kanan untuk Mobile Menu */}
+            {/* Mobile Menu */}
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={onMobileMenuToggle}
@@ -146,13 +167,12 @@ export default function Navbar({
           </div>
         </div>
 
-        {/* === Mobile Menu === */}
         <MobileMenu
           isMenuOpen={mobileMenuOpen}
           setIsMenuOpen={onMobileMenuToggle}
           user={user}
           profile={profile}
-          isAdmin={false}
+          isAdmin={profile?.role === 'admin'}
           handleLogout={handleLogout}
           toggleDarkMode={toggleDarkMode}
           isDarkMode={isDarkMode}

@@ -10,6 +10,7 @@ export interface Profile {
   store_name: string | null;
   whatsapp_number: string | null;
   is_active: boolean;
+  is_rejected: boolean; // ✅ tambahkan properti ini
   role: string | null;
 }
 
@@ -25,7 +26,7 @@ export function useProfilesApproval() {
       setLoading(true);
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, store_name, whatsapp_number, is_active, role')
+        .select('id, full_name, store_name, whatsapp_number, is_active, is_rejected, role') // ✅ ambil juga kolom is_rejected
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -38,20 +39,27 @@ export function useProfilesApproval() {
     }
   }, [supabase]);
 
-  // 🔹 Update status (dengan toast feedback)
+  // 🔹 Update status approval / penolakan
   const updateProfileStatus = useCallback(
-    async (id: string, status: boolean) => {
-      const actionText = status ? 'menyetujui' : 'menolak';
+    async (id: string, isApproved: boolean) => {
+      const updateData = isApproved
+        ? { is_active: true, is_rejected: false }
+        : { is_active: false, is_rejected: true };
+
+      const actionText = isApproved ? 'menyetujui' : 'menolak';
+
       try {
         const { error } = await supabase
           .from('profiles')
-          .update({ is_active: status })
+          .update(updateData)
           .eq('id', id);
 
         if (error) throw error;
 
         toast.success(
-          status ? 'Profil berhasil disetujui ✅' : 'Profil berhasil ditolak ❌'
+          isApproved
+            ? 'Profil berhasil disetujui ✅'
+            : 'Profil berhasil ditolak ❌'
         );
       } catch (err: any) {
         console.error(`Gagal ${actionText} profil:`, err);
@@ -65,7 +73,7 @@ export function useProfilesApproval() {
   const approveProfile = (id: string) => updateProfileStatus(id, true);
   const rejectProfile = (id: string) => updateProfileStatus(id, false);
 
-  // 🔹 Jalankan realtime listener
+  // 🔹 Jalankan realtime listener Supabase
   useEffect(() => {
     fetchProfiles();
 
@@ -75,21 +83,20 @@ export function useProfilesApproval() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'profiles' },
         (payload) => {
-          console.log('Realtime update:', payload);
           const { eventType, new: newRow, old } = payload;
 
-          // Tampilkan toast sesuai jenis event
+          // Tampilkan toast sesuai event
           if (eventType === 'INSERT') {
             toast.info(`Pengguna baru terdaftar: ${newRow.full_name}`);
           } else if (eventType === 'UPDATE') {
             if (!old.is_active && newRow.is_active) {
-              toast.success(`Profil ${newRow.full_name} telah disetujui`);
-            } else if (old.is_active && !newRow.is_active) {
-              toast.warning(`Profil ${newRow.full_name} dinonaktifkan`);
+              toast.success(`Profil ${newRow.full_name} telah disetujui ✅`);
+            } else if (!old.is_rejected && newRow.is_rejected) {
+              toast.warning(`Profil ${newRow.full_name} ditolak ❌`);
             }
           }
 
-          // Segarkan data
+          // Segarkan data setelah perubahan
           fetchProfiles();
         }
       )
