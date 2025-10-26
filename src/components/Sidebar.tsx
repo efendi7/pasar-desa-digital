@@ -15,7 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
-import Logo from './Logo'
+import Logo from '@/components/Logo' // pastikan path benar
 
 interface SidebarProps {
   sidebarOpen: boolean
@@ -33,14 +33,12 @@ export default function Sidebar({
   const pathname = usePathname()
   const { isAdmin } = useAdmin()
 
-  // Menu umum yang sebelumnya di navbar
   const generalMenu = [
     { href: '/', label: 'Beranda', icon: Home },
     { href: '/products', label: 'Produk', icon: Package },
     { href: '/store', label: 'Toko', icon: Store },
   ]
 
-  // Menu user (sebelumnya sudah ada)
   const baseMenu = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/products', label: 'Produk Saya', icon: Package },
@@ -48,7 +46,6 @@ export default function Sidebar({
     { href: '/dashboard/profile', label: 'Toko Saya', icon: User2 },
   ]
 
-  // Menu admin (jika admin)
   const adminMenu = [
     { href: '/admin/dashboard', label: 'Admin Dashboard', icon: LayoutDashboard },
     { href: '/admin/products', label: 'Kelola Produk', icon: Package },
@@ -83,20 +80,23 @@ export default function Sidebar({
             collapsed ? 'justify-center' : 'justify-start'
           }`}
         >
-          <Link href="/dashboard" onClick={() => setSidebarOpen(false)} className="block">
+          <Link href="/dashboard" onClick={() => setSidebarOpen(false)}>
             {collapsed ? (
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-xl">S</span>
-              </div>
+              <Logo
+                variant="vertical"
+                size="sm"
+                showSubtitle={false}
+                className="scale-110"
+              />
             ) : (
-              <Logo className="w-full" />
+              <Logo variant="horizontal" size="md" />
             )}
           </Link>
         </div>
 
         {/* Menu Navigasi */}
         <nav className="flex-1 overflow-y-auto px-2 py-4">
-          {/* Menu Umum (Tetap tampil di mobile) */}
+          {/* Menu Umum */}
           <ul className="space-y-2 mb-6">
             {!collapsed && (
               <li className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
@@ -130,8 +130,7 @@ export default function Sidebar({
             })}
           </ul>
 
-          {/* Menu Utama (Dashboard - Sembunyi di mobile) */}
-          {/* MODIFIKASI: Tambahkan 'hidden lg:block' */}
+          {/* Menu Dashboard */}
           <ul className="hidden lg:block space-y-2">
             {!collapsed && (
               <li className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
@@ -165,9 +164,8 @@ export default function Sidebar({
             })}
           </ul>
 
-          {/* Menu Admin (Sembunyi di mobile) */}
+          {/* Menu Admin */}
           {isAdmin && (
-            /* MODIFIKASI: Tambahkan 'hidden lg:block' */
             <ul className="hidden lg:block space-y-2 mt-6">
               {!collapsed && (
                 <li className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">

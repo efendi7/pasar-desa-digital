@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
+import { Toaster } from "sonner"; // <-- tambahkan ini
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="font-sans bg-[var(--background)] text-[var(--foreground)] overflow-x-hidden">
         {children}
+        <Toaster richColors position="top-right" /> {/* ✅ Tambahkan ini */}
       </body>
     </html>
   );

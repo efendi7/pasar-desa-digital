@@ -4,13 +4,10 @@ import { useState, useEffect, FormEvent, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
-import { LogIn, Mail, Lock } from 'lucide-react';
-import { PageHeader } from '@/components/PageHeader';
+import { LogIn, Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
 import { FormInput } from '@/components/FormInput';
 import { PrimaryButton } from '@/components/PrimaryButton';
-import { SecondaryButton } from '@/components/SecondaryButton';
 
-// Pisahkan logic utama ke komponen anak
 function LoginContent() {
   const supabase = createClient();
   const router = useRouter();
@@ -25,7 +22,7 @@ function LoginContent() {
   useEffect(() => {
     if (searchParams.get('verified')) {
       supabase.auth.signOut();
-      setInfo('✅ Email Anda sudah diverifikasi. Silakan login.');
+      setInfo('Email Anda sudah diverifikasi. Silakan login.');
     }
   }, [searchParams, supabase]);
 
@@ -70,78 +67,117 @@ function LoginContent() {
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 pt-10 pb-16">
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
-        <PageHeader
-          title="Login UMKM"
-          subtitle="Masuk ke akun Anda untuk mengelola produk dan penjualan"
+    <>
+      {/* Header */}
+      <div className="px-8 pt-8 pb-6 border-b border-gray-100">
+        <h2 className="text-2xl font-bold text-gray-900 text-center">
+          Masuk ke Akun Anda
+        </h2>
+        <p className="text-sm text-gray-600 text-center mt-2">
+          Kelola produk dan penjualan UMKM Anda
+        </p>
+      </div>
+
+      {/* Form */}
+      <form onSubmit={handleLogin} className="p-8 space-y-5">
+        {/* Success Message */}
+        {info && (
+          <div className="flex items-start gap-3 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl">
+            <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <p className="text-sm">{info}</p>
+          </div>
+        )}
+
+        {/* Email Input */}
+        <FormInput
+          label="Alamat Email"
+          type="email"
+          placeholder="nama@email.com"
+          icon={<Mail className="w-5 h-5 text-gray-400" />}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
         />
 
-        <form onSubmit={handleLogin} className="p-8 space-y-6">
-          {info && (
-            <div className="bg-green-50 border text-green-700 px-4 py-3 rounded-xl">
-              {info}
-            </div>
-          )}
+        {/* Password Input */}
+        <FormInput
+          label="Password"
+          type="password"
+          placeholder="Masukkan password Anda"
+          icon={<Lock className="w-5 h-5 text-gray-400" />}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
 
-          <FormInput
-            label="Email"
-            type="email"
-            icon={<Mail className="w-5 h-5 text-gray-400" />}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+        {/* Error Message */}
+        {error && (
+          <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
 
-          <FormInput
-            label="Password"
-            type="password"
-            icon={<Lock className="w-5 h-5 text-gray-400" />}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+        {/* Submit Button */}
+        <PrimaryButton
+          type="submit"
+          loading={loading}
+          icon={<LogIn className="w-5 h-5" />}
+          className="w-full"
+        >
+          {loading ? 'Memproses...' : 'Masuk'}
+        </PrimaryButton>
 
-          {error && (
-            <div className="bg-red-50 border text-red-700 px-4 py-3 rounded-xl">
-              ⚠️ {error}
-            </div>
-          )}
+        {/* Divider */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-4 bg-white text-gray-500">atau</span>
+          </div>
+        </div>
 
-          <PrimaryButton
-            type="submit"
-            loading={loading}
-            icon={<LogIn className="w-5 h-5" />}
-            className="w-full"
-          >
-            Masuk
-          </PrimaryButton>
-
-          <div className="text-sm text-center text-gray-600">
+        {/* Register Link */}
+        <div className="text-center">
+          <p className="text-sm text-gray-600">
             Belum punya akun?{' '}
             <Link
               href="/register"
-              className="font-medium text-green-600 hover:underline"
+              className="font-semibold text-green-600 hover:text-green-700 hover:underline transition-colors"
             >
-              Daftar di sini
+              Daftar Sekarang
             </Link>
-          </div>
-        </form>
+          </p>
+        </div>
+      </form>
 
-        <div className="p-6 border-t text-center">
-          <SecondaryButton href="/" className="w-full">
-            Kembali ke Beranda
-          </SecondaryButton>
+      {/* Footer Help */}
+      <div className="px-8 pb-8 pt-4 border-t border-gray-100 bg-gray-50">
+        <div className="flex items-center justify-center gap-4 text-xs text-gray-600">
+          <Link href="/bantuan" className="text-green-600 hover:underline">
+            Bantuan
+          </Link>
+          <span className="text-gray-300">•</span>
+          <Link href="/tentang" className="text-green-600 hover:underline">
+            Tentang Kami
+          </Link>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
-// Bungkus dengan Suspense di komponen utama
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
+    <Suspense 
+      fallback={
+        <div className="p-8 text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-200 border-t-green-600"></div>
+          <p className="mt-4 text-sm text-gray-600">Memuat halaman...</p>
+        </div>
+      }
+    >
       <LoginContent />
     </Suspense>
   );
