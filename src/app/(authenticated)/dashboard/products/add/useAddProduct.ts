@@ -13,12 +13,12 @@ export function useAddProduct() {
   const router = useRouter();
 
   const [userId, setUserId] = useState<string | null>(null);
+  const [userDusunId, setUserDusunId] = useState<string | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
-  const [dusuns, setDusuns] = useState<any[]>([]); // 👈 1. Add state for dusuns
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // 🔹 Ambil user login, kategori & dusun saat pertama kali render
+  // 🔹 Ambil user login, kategori & dusun user saat pertama kali render
   useEffect(() => {
     (async () => {
       const {
@@ -32,7 +32,7 @@ export function useAddProduct() {
 
       setUserId(user.id);
 
-      // Ambil daftar kategori
+      // Ambil kategori produk
       const { data: categoriesData, error: catError } = await supabase
         .from('categories')
         .select('*')
@@ -42,14 +42,15 @@ export function useAddProduct() {
         setCategories(categoriesData);
       }
 
-      // 👈 2. Fetch dusuns data
-      const { data: dusunsData, error: dusunError } = await supabase
-        .from('dusun')
-        .select('*')
-        .order('name');
-      
-      if (!dusunError && dusunsData) {
-        setDusuns(dusunsData);
+      // Ambil dusun dari profil user
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('dusun_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profileError && profile?.dusun_id) {
+        setUserDusunId(profile.dusun_id);
       }
     })();
   }, [router, supabase]);
@@ -88,7 +89,6 @@ export function useAddProduct() {
     description: string;
     price: string;
     categoryId: string;
-    dusunId: string; // 👈 3. Add dusunId to the function parameter type
     images: (File | null)[];
   }) {
     setLoading(true);
@@ -109,7 +109,7 @@ export function useAddProduct() {
         description: form.description.trim(),
         price: parseFloat(form.price),
         category_id: form.categoryId || null,
-        dusun_id: form.dusunId || null, // 👈 4. Add dusun_id to the insert object
+        dusun_id: userDusunId || null, // otomatis dari profil user
         image_url: imageUrls[0],
         image_url_1: imageUrls[1],
         image_url_2: imageUrls[2],
@@ -130,7 +130,6 @@ export function useAddProduct() {
 
   return {
     categories,
-    dusuns, // 👈 5. Return dusuns so the page component can use it
     loading,
     error,
     submitProduct,

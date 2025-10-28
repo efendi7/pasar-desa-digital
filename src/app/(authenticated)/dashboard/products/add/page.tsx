@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Home, Package, Upload, Plus, Store } from 'lucide-react';
+import { Package, Upload, Plus, Store } from 'lucide-react';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { PageHeader } from '@/components/PageHeader';
@@ -14,14 +14,13 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { SecondaryButton } from '@/components/SecondaryButton';
 
 export default function AddProductPage() {
-  const { categories, dusuns, loading, error, submitProduct } = useAddProduct();
+  const { categories, loading, error, submitProduct } = useAddProduct();
 
   const [form, setForm] = useState({
     name: '',
     description: '',
     price: '',
     categoryId: '',
-    dusunId: '',
     images: [null, null, null, null] as (File | null)[],
   });
 
@@ -62,10 +61,7 @@ export default function AddProductPage() {
 
       {/* 🌗 Container Card */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 transition-colors duration-300">
-        <PageHeader 
-          title="Tambah Produk Baru" 
-          subtitle="Lengkapi informasi produk Anda"
-        />
+        <PageHeader title="Tambah Produk Baru" subtitle="Lengkapi informasi produk Anda" />
 
         <form onSubmit={handleSubmit} className="p-8 space-y-8">
           {/* 📸 Upload Gambar */}
@@ -85,7 +81,7 @@ export default function AddProductPage() {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
 
-          {/* 📂 Kategori, Dusun & 💰 Harga */}
+          {/* 📂 Kategori & 💰 Harga */}
           <div className="grid md:grid-cols-2 gap-6">
             <FormSelect
               label="Kategori"
@@ -94,16 +90,6 @@ export default function AddProductPage() {
               options={categories.map((c) => ({
                 value: String(c.id),
                 label: c.name,
-              }))}
-            />
-
-            <FormSelect
-              label="Dusun"
-              value={form.dusunId}
-              onChange={(val) => setForm({ ...form, dusunId: String(val) })}
-              options={dusuns.map((d) => ({
-                value: String(d.id),
-                label: d.name,
               }))}
             />
 

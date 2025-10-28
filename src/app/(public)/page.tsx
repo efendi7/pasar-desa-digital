@@ -7,22 +7,9 @@ import { CategoriesSection } from "@/components/home/CategoriesSection";
 import { ProductsSection } from "@/components/home/ProductsSection";
 import { CTASection } from "@/components/home/CTASection";
 import { getStats } from "@/lib/getStats";
+import type { Product } from "@/types";
 
 export const revalidate = 0;
-
-// ✅ FIX: Menyesuaikan interface agar cocok dengan data dari Supabase
-export interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image_url: string | null;
-  views: number;
-  created_at?: string; // ✅ tambahkan ini
-  updated_at?: string; // ✅ opsional, tapi bagus buat jaga konsistensi
-  profiles: { store_name: string }[] | null;
-  categories: { name: string }[] | null;
-}
-
 
 export interface Category {
   id: string;
@@ -43,24 +30,35 @@ export default async function IndexPage() {
 
   console.log("Latest Server Stats Data:", statsData);
 
- const [productsResult, categoriesResult] = await Promise.all([
-  supabase
-    .from("products")
-    .select(`
-      id, name, price, image_url, views, created_at, updated_at,
-      profiles ( store_name ),
-      categories ( name )
-    `)
-    .eq("is_active", true)
-    .order("created_at", { ascending: false })
-    .limit(8),
+  const [productsResult, categoriesResult] = await Promise.all([
+    supabase
+      .from("products")
+      .select(`
+        id, name, description, price, image_url, views, 
+        created_at, updated_at, owner_id, category_id, dusun_id, is_active,
+        profiles ( store_name ),
+        categories ( name ),
+        dusun ( name )
+      `)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(10),
 
-  supabase.from("categories").select("id, name, slug").order("name"),
-]);
+    supabase.from("categories").select("id, name, slug").order("name"),
+  ]);
 
+  // ✅ Normalize data: Convert arrays to single objects
+  const products: Product[] = (productsResult.data || []).map((p: any) => ({
+    ...p,
+    categories: Array.isArray(p.categories) ? p.categories[0] : p.categories,
+    dusun: Array.isArray(p.dusun) ? p.dusun[0] : p.dusun,
+    profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles,
+  }));
 
-  const products = productsResult.data || [];
   const categories = categoriesResult.data || [];
+
+  // ✅ Debug
+  console.log("Normalized product:", products[0]);
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden">
@@ -69,8 +67,7 @@ export default async function IndexPage() {
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8 space-y-16 max-w-[1920px] mx-auto">
         <HowItWorks />
         <CategoriesSection categories={categories} />
-        {/* Sekarang, tipe 'products' akan cocok dengan 'Product[]' */}
-        <ProductsSection products={products as Product[]} />
+        <ProductsSection products={products} />
       </div>
 
       <CTASection />

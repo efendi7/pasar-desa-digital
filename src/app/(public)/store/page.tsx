@@ -27,6 +27,58 @@ interface Dusun {
   name: string;
 }
 
+// Komponen Avatar dengan Inisial
+function StoreAvatar({ store }: { store: StoreData }) {
+  const [imageError, setImageError] = useState(false);
+
+  const getInitials = (name: string) => {
+    if (!name) return '?';
+    const words = name.trim().split(' ');
+    if (words.length >= 2) {
+      return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const getColorFromName = (name: string) => {
+    const colors = [
+      'bg-red-500',
+      'bg-blue-500',
+      'bg-green-500',
+      'bg-yellow-500',
+      'bg-purple-500',
+      'bg-pink-500',
+      'bg-indigo-500',
+      'bg-teal-500',
+      'bg-orange-500',
+      'bg-cyan-500',
+    ];
+    const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[index % colors.length];
+  };
+
+  if (!store.avatar_url || imageError) {
+    return (
+      <div
+        className={`w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl border-2 border-white shadow-md group-hover:scale-105 transition-transform ${getColorFromName(
+          store.store_name
+        )}`}
+      >
+        {getInitials(store.store_name)}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={store.avatar_url}
+      alt={store.store_name}
+      onError={() => setImageError(true)}
+      className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-md group-hover:scale-105 transition-transform"
+    />
+  );
+}
+
 export default function StoresListPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -56,61 +108,57 @@ export default function StoresListPage() {
 
       setDusunList(dusunData || []);
 
-      // ...
-const { data: storesData, error: storesError } = await supabase
-  .from('profiles')
-  .select(`
-    id,
-    store_name,
-    full_name,
-    store_description,
-    avatar_url,
-    whatsapp_number,
-    latitude,
-    longitude,
-    dusun_id,
-    dusun:dusun_id ( name )
-  `)
-  .eq('is_active', true)
-  .order('created_at', { ascending: false });
+      const { data: storesData, error: storesError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          store_name,
+          full_name,
+          store_description,
+          avatar_url,
+          whatsapp_number,
+          latitude,
+          longitude,
+          dusun_id,
+          dusun:dusun_id ( name )
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
-if (storesError) {
-  console.error('Error fetching stores:', storesError);
-  setLoading(false);
-  return;
-}
+      if (storesError) {
+        console.error('Error fetching stores:', storesError);
+        setLoading(false);
+        return;
+      }
 
-// Pastikan dusun hanya ambil object tunggal, bukan array
-const storesNormalized = (storesData || []).map((store) => ({
-  ...store,
-  dusun: Array.isArray(store.dusun) ? store.dusun[0] : store.dusun,
-}));
+      const storesNormalized = (storesData || []).map((store) => ({
+        ...store,
+        dusun: Array.isArray(store.dusun) ? store.dusun[0] : store.dusun,
+      }));
 
-// Fetch product counts dan views
-const storesWithCounts = await Promise.all(
-  storesNormalized.map(async (store) => {
-    const { data: products } = await supabase
-      .from('products')
-      .select('id, views')
-      .eq('owner_id', store.id)
-      .eq('is_active', true);
+      const storesWithCounts = await Promise.all(
+        storesNormalized.map(async (store) => {
+          const { data: products } = await supabase
+            .from('products')
+            .select('id, views')
+            .eq('owner_id', store.id)
+            .eq('is_active', true);
 
-    const productCount = products?.length || 0;
-    const totalViews = products?.reduce((sum, p) => sum + (p.views || 0), 0) || 0;
+          const productCount = products?.length || 0;
+          const totalViews = products?.reduce((sum, p) => sum + (p.views || 0), 0) || 0;
 
-    return {
-      ...store,
-      _count: {
-        products: productCount,
-        total_views: totalViews,
-      },
-    };
-  })
-);
+          return {
+            ...store,
+            _count: {
+              products: productCount,
+              total_views: totalViews,
+            },
+          };
+        })
+      );
 
-setStores(storesWithCounts);
-setFilteredStores(storesWithCounts);
-
+      setStores(storesWithCounts);
+      setFilteredStores(storesWithCounts);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -121,7 +169,6 @@ setFilteredStores(storesWithCounts);
   function filterStores() {
     let filtered = [...stores];
 
-    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -132,7 +179,6 @@ setFilteredStores(storesWithCounts);
       );
     }
 
-    // Filter by dusun
     if (selectedDusun) {
       filtered = filtered.filter((store) => store.dusun_id === selectedDusun);
     }
@@ -216,11 +262,7 @@ setFilteredStores(storesWithCounts);
                 {/* Store Header */}
                 <div className="bg-gradient-to-r from-green-50 to-green-100/50 p-6 border-b border-green-200">
                   <div className="flex items-start gap-4">
-                    <img
-                      src={store.avatar_url || '/default-avatar.png'}
-                      alt={store.store_name}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-md group-hover:scale-105 transition-transform"
-                    />
+                    <StoreAvatar store={store} />
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-gray-900 text-lg mb-1 truncate group-hover:text-green-600 transition-colors">
                         {store.store_name}

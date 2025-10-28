@@ -198,26 +198,72 @@ export default function StoreMap({
         className="h-96 w-full rounded-xl border shadow-inner overflow-hidden relative z-0"
       />
 
-      {/* BUTTON GPS */}
-      {!readonly && (
-        <button
-          onClick={requestGPSLocation}
-          disabled={isRequestingGPS}
-          className="flex w-full items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:bg-muted disabled:text-muted-foreground font-medium shadow-sm"
-        >
-          {isRequestingGPS ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Mendeteksi Lokasi...
-            </>
-          ) : (
-            <>
-              <LocateFixed className="w-4 h-4" />
-              {gpsStatus === 'success' ? 'Perbarui Lokasi GPS' : 'Gunakan Lokasi GPS'}
-            </>
-          )}
-        </button>
-      )}
+ {/* BUTTON GPS */}
+{!readonly && (
+  <button
+    onClick={requestGPSLocation}
+    disabled={isRequestingGPS}
+    className={`flex w-full items-center justify-center gap-2 px-4 py-2 rounded-lg 
+      border-2 border-green-400 bg-green-50 text-green-700 
+      hover:bg-green-100 hover:border-green-500 
+      transition-all disabled:opacity-50 disabled:cursor-not-allowed 
+      font-medium shadow-sm`}
+  >
+    {isRequestingGPS ? (
+      <>
+        <Loader2 className="w-4 h-4 animate-spin" />
+        Mendeteksi Lokasi...
+      </>
+    ) : (
+      <>
+        <LocateFixed className="w-4 h-4" />
+        {gpsStatus === 'success' ? 'Perbarui Lokasi GPS' : 'Gunakan Lokasi GPS'}
+      </>
+    )}
+  </button>
+)}
+
+{/* INPUT KOORDINAT MANUAL */}
+{!readonly && (
+  <div className="grid grid-cols-2 gap-3 mt-3">
+    <div>
+      <label className="text-xs font-medium text-gray-700">Latitude</label>
+      <input
+        type="number"
+        step="any"
+        value={displayLat}
+        onChange={(e) => {
+          const lat = parseFloat(e.target.value)
+          if (!isNaN(lat)) {
+            setCurrentLocation([lat, displayLng])
+            onLocationChange(lat, displayLng)
+            if (mapRef.current) mapRef.current.setView([lat, displayLng])
+          }
+        }}
+        className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-300 focus:border-green-400 text-sm"
+      />
+    </div>
+
+    <div>
+      <label className="text-xs font-medium text-gray-700">Longitude</label>
+      <input
+        type="number"
+        step="any"
+        value={displayLng}
+        onChange={(e) => {
+          const lng = parseFloat(e.target.value)
+          if (!isNaN(lng)) {
+            setCurrentLocation([displayLat, lng])
+            onLocationChange(displayLat, lng)
+            if (mapRef.current) mapRef.current.setView([displayLat, lng])
+          }
+        }}
+        className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-300 focus:border-green-400 text-sm"
+      />
+    </div>
+  </div>
+)}
+
 
       {/* INFO */}
       <div className="text-xs text-muted-foreground text-center space-y-1">

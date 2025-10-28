@@ -19,10 +19,15 @@ export function useProducts() {
     setUserId(user.id);
     setLoading(true);
     const { data, error } = await supabase
-      .from('products')
-      .select('*, categories(name)')
-      .eq('owner_id', user.id)
-      .order('created_at', { ascending: false });
+  .from('products')
+  .select(`
+    *,
+    categories(name),
+    dusun(name)
+  `)
+  .eq('owner_id', user.id)
+  .order('created_at', { ascending: false });
+
     if (error) {
       console.error('Error loading products:', error);
       setLoading(false);

@@ -15,6 +15,33 @@ const StoreMap = dynamic(() => import('@/components/StoreMap'), {
   ),
 });
 
+// Fungsi untuk mendapatkan inisial dari nama
+function getInitials(name: string): string {
+  if (!name) return '?';
+  const words = name.trim().split(' ');
+  if (words.length === 1) {
+    return words[0].substring(0, 2).toUpperCase();
+  }
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+}
+
+// Fungsi untuk mendapatkan warna background berdasarkan nama
+function getAvatarColor(name: string): string {
+  const colors = [
+    'bg-blue-500',
+    'bg-green-500',
+    'bg-purple-500',
+    'bg-pink-500',
+    'bg-indigo-500',
+    'bg-red-500',
+    'bg-yellow-500',
+    'bg-teal-500',
+  ];
+  
+  const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return colors[index % colors.length];
+}
+
 export default function PublicStorePage() {
   const { id } = useParams();
   const router = useRouter();
@@ -120,6 +147,9 @@ export default function PublicStorePage() {
   const totalViews =
     store.products?.reduce((sum: number, p: any) => sum + (p.views || 0), 0) || 0;
 
+  const initials = getInitials(store.store_name || store.full_name);
+  const avatarColor = getAvatarColor(store.store_name || store.full_name);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -137,11 +167,30 @@ export default function PublicStorePage() {
           {/* Header */}
           <div className="bg-gradient-to-r from-green-50 to-green-100/50 px-8 py-6 border-b border-green-200">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-              <img
-                src={store.avatar_url || '/default-avatar.png'}
-                alt={store.store_name}
-                className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
-              />
+              {/* Avatar dengan inisial atau gambar */}
+              {store.avatar_url ? (
+                <img
+                  src={store.avatar_url}
+                  alt={store.store_name}
+                  className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                  onError={(e) => {
+                    // Jika gambar gagal dimuat, sembunyikan img dan tampilkan inisial
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                      const initialsDiv = document.createElement('div');
+                      initialsDiv.className = `w-24 h-24 rounded-full ${avatarColor} border-4 border-white shadow-lg flex items-center justify-center text-white text-2xl font-bold`;
+                      initialsDiv.textContent = initials;
+                      parent.appendChild(initialsDiv);
+                    }
+                  }}
+                />
+              ) : (
+                <div className={`w-24 h-24 rounded-full ${avatarColor} border-4 border-white shadow-lg flex items-center justify-center text-white text-2xl font-bold`}>
+                  {initials}
+                </div>
+              )}
+              
               <div className="flex-1 text-center sm:text-left">
                 <h1 className="text-3xl font-bold text-gray-900 mb-1">
                   {store.store_name}

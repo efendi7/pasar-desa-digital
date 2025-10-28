@@ -38,13 +38,24 @@ export default function MobileMenu({
 
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
+  const [imageError, setImageError] = useState(false)
   const supabase = createClient()
 
   // Ambil data yang benar dari profile
   const fullName = profile?.full_name || 'User Tanpa Nama'
   const storeName = profile?.store_name || '-'
-  const avatarUrl = profile?.avatar_url || '/default-avatar.png'
+  const avatarUrl = profile?.avatar_url || ''
   const email = user?.email || '-'
+
+  // Fungsi untuk mendapatkan inisial
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -102,27 +113,30 @@ export default function MobileMenu({
             {/* ===== PROFIL USER ===== */}
             {user && profile && (
               <div className="mb-5 text-center">
-  <img
-    src={avatarUrl}
-    alt="avatar"
-    className="w-16 h-16 rounded-full mx-auto mb-2 border-2 border-green-200 dark:border-green-500 object-cover shadow-sm"
-    onError={(e) => {
-      e.currentTarget.src = '/default-avatar.png'
-    }}
-  />
-  {/* store_name lebih besar dan tebal */}
-  <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
-    {storeName}
-  </div>
-  {/* full_name lebih kecil dan ringan */}
-  <div className="text-sm text-gray-600 dark:text-gray-400">
-    {fullName}
-  </div>
-  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-    {email}
-  </div>
-</div>
-
+                {avatarUrl && !imageError ? (
+                  <img
+                    src={avatarUrl}
+                    alt="avatar"
+                    className="w-16 h-16 rounded-full mx-auto mb-2 border-2 border-green-200 dark:border-green-500 object-cover shadow-sm"
+                    onError={() => setImageError(true)}
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full mx-auto mb-2 border-2 border-green-200 dark:border-green-500 bg-gradient-to-br from-green-400 to-green-600 dark:from-green-500 dark:to-green-700 flex items-center justify-center text-white font-bold text-xl shadow-sm">
+                    {getInitials(storeName !== '-' ? storeName : fullName)}
+                  </div>
+                )}
+                {/* store_name lebih besar dan tebal */}
+                <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                  {storeName}
+                </div>
+                {/* full_name lebih kecil dan ringan */}
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {fullName}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                  {email}
+                </div>
+              </div>
             )}
 
             {/* ===== SEARCH BAR ===== */}

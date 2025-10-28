@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, Store, Package, Edit } from "lucide-react";
+import { Eye, Store, Package, Edit, Tag, MapPin } from "lucide-react";
 import React from "react";
 
 interface ProductCardProps {
@@ -14,7 +14,7 @@ interface ProductCardProps {
   children?: React.ReactNode;
 }
 
-export const ProductCard = React.memo(function ProductCard({
+const ProductCard = React.memo(function ProductCard({
   product,
   showEdit = false,
   showStore = true,
@@ -55,6 +55,23 @@ export const ProductCard = React.memo(function ProductCard({
           {product.name}
         </h3>
 
+        {/* Kategori */}
+        {product.categories?.name && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-zinc-400">
+            <Tag className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">{product.categories.name}</span>
+          </div>
+        )}
+
+        {/* zs */}
+        {product.dusun?.name && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-zinc-400">
+            <MapPin className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">{product.dusun.name}</span>
+          </div>
+        )}
+
+        {/* Store */}
         {showStore && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-zinc-400">
             <Store className="h-4 w-4 flex-shrink-0" />
@@ -107,3 +124,6 @@ export const ProductCard = React.memo(function ProductCard({
     prevProps.showStore === nextProps.showStore
   );
 });
+
+// ✅ EXPORT DEFAULT
+export { ProductCard };

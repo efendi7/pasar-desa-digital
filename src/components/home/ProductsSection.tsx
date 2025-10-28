@@ -1,6 +1,6 @@
 "use client";
 
-import { Product } from "@/app/(public)/page";
+import { Product } from "@/types"; // ✅ Import dari @/types bukan dari page
 import { ArrowLeft, ArrowRight, Store, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -185,13 +185,12 @@ export const ProductsSection = ({ products }: ProductsSectionProps) => {
       {/* Tombol "Lihat Semua" untuk mobile */}
       <div className="text-center sm:hidden">
         <Link
-  href="/products"
-  className="flex items-center justify-center gap-2 h-12 px-6 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-semibold hover:text-green-600 dark:hover:text-green-300 hover:border-green-400 dark:hover:border-green-400 transition-all duration-300 shadow-inner"
->
-  Lihat Semua
-  <ArrowRight className="w-4 h-4" />
-</Link>
-
+          href="/products"
+          className="flex items-center justify-center gap-2 h-12 px-6 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-semibold hover:text-green-600 dark:hover:text-green-300 hover:border-green-400 dark:hover:border-green-400 transition-all duration-300 shadow-inner"
+        >
+          Lihat Semua
+          <ArrowRight className="w-4 h-4" />
+        </Link>
       </div>
     </section>
   );
