@@ -1,5 +1,6 @@
 'use client';
 
+import React, { memo, useMemo } from 'react';
 import UserStatCard from './UserStatsCard';
 import { userStatsData } from '@/config/dashboard/userStatsConfig';
 
@@ -13,17 +14,21 @@ interface UserStatsGridProps {
   stats: UserStats;
 }
 
-export default function UserStatsGrid({ stats }: UserStatsGridProps) {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-      {userStatsData.map((stat, index) => (
+const UserStatsGrid = memo(function UserStatsGrid({ stats }: UserStatsGridProps) {
+  const items = useMemo(
+    () =>
+      userStatsData.map((stat, index) => (
         <UserStatCard
           key={stat.label}
           stat={stat}
           value={stats[stat.key as keyof UserStats]}
           index={index}
         />
-      ))}
-    </div>
+      )),
+    [stats]
   );
-}
+
+  return <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">{items}</div>;
+});
+
+export default UserStatsGrid;

@@ -1,43 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { Search, Home, Package } from 'lucide-react';
+
 import { ProductCard } from '@/components/ui/ProductCard';
 import { Pagination } from '@/components/Pagination';
 import { PageHeader } from '@/components/PageHeader';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { FormSelect } from '@/components/FormSelect';
+import ProductSkeletonGrid from '@/components/dashboard/ProductSkeletonGrid';
 
-// --- Skeleton Loading ---
-function ProductCardSkeleton() {
-  return (
-    <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-md overflow-hidden animate-pulse">
-      <div className="h-48 bg-gray-200 dark:bg-zinc-700" />
-      <div className="p-4 space-y-3">
-        <div className="h-4 bg-gray-200 dark:bg-zinc-600 rounded w-3/4" />
-        <div className="h-3 bg-gray-200 dark:bg-zinc-600 rounded w-1/2" />
-        <div className="flex justify-between items-center pt-2">
-          <div className="h-5 bg-gray-200 dark:bg-zinc-600 rounded w-20" />
-          <div className="h-5 bg-gray-200 dark:bg-zinc-600 rounded w-16" />
-        </div>
-      </div>
-    </div>
-  );
-}
+// 🦾 Lazy-load ProductGrid (opsional biar cepat render)
+const ProductGrid = dynamic(() => import('@/components/dashboard/ProductGrid'), {
+  loading: () => <ProductSkeletonGrid count={8} />,
+});
 
-function ProductsGridSkeleton() {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {[...Array(12)].map((_, i) => (
-        <ProductCardSkeleton key={i} />
-      ))}
-    </div>
-  );
-}
-
-// --- Props ---
 interface ProductsClientProps {
   initialPage: number;
   initialCategory: string;
@@ -49,7 +29,6 @@ interface ProductsClientProps {
   totalCount: number;
 }
 
-// --- Component ---
 export default function ProductsClient({
   initialPage,
   initialCategory,
@@ -59,79 +38,80 @@ export default function ProductsClient({
   initialCategories,
   initialDusuns,
 }: ProductsClientProps) {
-  const [products] = useState<any[]>(initialProducts);
-  const [categories] = useState<any[]>(initialCategories);
-  const [dusuns] = useState<any[]>(initialDusuns);
+  const router = useRouter();
+
+  const [products] = useState(initialProducts);
+  const [categories] = useState(initialCategories);
+  const [dusuns] = useState(initialDusuns);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
 
-  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
-  const [selectedDusun, setSelectedDusun] = useState<string>(initialDusun);
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [selectedDusun, setSelectedDusun] = useState(initialDusun);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [searchWarning, setSearchWarning] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(initialPage);
 
   const ITEMS_PER_PAGE = 8;
-  const router = useRouter();
 
-  // --- debounce search ---
+  // Debounce pencarian
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // --- reset page ke 1 saat filter/search berubah ---
+  // Reset ke page 1 setiap filter berubah
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedCategory, selectedDusun, debouncedSearch]);
 
-  // --- filter products ---
+  // Filter produk
   useEffect(() => {
     setLoading(true);
     const timer = setTimeout(() => {
-      filterProducts();
+      let filtered = products;
+
+      if (selectedCategory !== 'all') {
+        filtered = filtered.filter((p) => p.categories?.slug === selectedCategory);
+      }
+
+      if (selectedDusun !== 'all') {
+        filtered = filtered.filter((p) => p.profiles?.dusun?.slug === selectedDusun);
+      }
+
+      const trimmedQuery = debouncedSearch.trim();
+      if (trimmedQuery) {
+        if (trimmedQuery.length < 3) {
+          setSearchWarning('Minimal 3 karakter untuk pencarian');
+        } else {
+          setSearchWarning('');
+          const query = trimmedQuery.toLowerCase();
+          filtered = filtered.filter(
+            (p) =>
+              p.name.toLowerCase().includes(query) ||
+              p.profiles?.store_name?.toLowerCase().includes(query)
+          );
+        }
+      } else {
+        setSearchWarning('');
+      }
+
+      setFilteredProducts(filtered);
       updateURL(currentPage, selectedCategory, selectedDusun, debouncedSearch);
-    }, 300);
+      setLoading(false);
+    }, 400);
+
     return () => clearTimeout(timer);
   }, [selectedCategory, selectedDusun, debouncedSearch, currentPage]);
 
-  function filterProducts() {
-    let filtered = products;
-
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter((p) => p.categories?.slug === selectedCategory);
-    }
-
-    if (selectedDusun !== 'all') {
-      filtered = filtered.filter((p) => p.profiles?.dusun?.slug === selectedDusun);
-    }
-
-    const trimmedQuery = debouncedSearch.trim();
-    if (trimmedQuery) {
-      if (trimmedQuery.length < 3) {
-        setSearchWarning('Minimal 3 karakter untuk pencarian');
-      } else {
-        setSearchWarning('');
-        const query = trimmedQuery.toLowerCase();
-        filtered = filtered.filter(
-          (p) =>
-            p.name.toLowerCase().includes(query) ||
-            p.profiles?.store_name.toLowerCase().includes(query)
-        );
-      }
-    } else {
-      setSearchWarning('');
-    }
-
-    setFilteredProducts(filtered);
-
-    if (currentPage > Math.ceil(filtered.length / ITEMS_PER_PAGE)) {
-      setCurrentPage(1);
-    }
-
-    setLoading(false);
-  }
+  // Pagination
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+  const startItem = filteredProducts.length > 0 ? startIndex + 1 : 0;
+  const endItem = Math.min(endIndex, filteredProducts.length);
 
   function updateURL(page: number, category: string, dusun: string, search: string) {
     const params = new URLSearchParams();
@@ -143,30 +123,23 @@ export default function ProductsClient({
     router.push(`/products${queryString ? `?${queryString}` : ''}`, { scroll: false });
   }
 
-  // --- pagination logic ---
-  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentProducts = filteredProducts.slice(startIndex, endIndex);
-  const startItem = filteredProducts.length > 0 ? startIndex + 1 : 0;
-  const endItem = Math.min(endIndex, filteredProducts.length);
-
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // ⬇️ UI
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0 dark:text-white">
 
       {/* Breadcrumb */}
       <Breadcrumb
-  items={[
-    { label: 'Beranda', href: '/', icon: <Home className="w-4 h-4 mr-1" /> },
-    { label: 'Katalog Produk', icon: <Package className="w-4 h-4 mr-1" /> },
-  ]}
-  className="dark:text-zinc-400"
-/>
+        items={[
+          { label: 'Beranda', href: '/', icon: <Home className="w-4 h-4 mr-1" /> },
+          { label: 'Katalog Produk', icon: <Package className="w-4 h-4 mr-1" /> },
+        ]}
+        className="dark:text-zinc-400"
+      />
 
       {/* Page Header */}
       <PageHeader
@@ -177,7 +150,6 @@ export default function ProductsClient({
       {/* Filter Section */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 overflow-hidden mb-8">
         <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400 dark:text-zinc-500" />
@@ -214,7 +186,6 @@ export default function ProductsClient({
               ...categories.map((c) => ({ value: c.slug, label: c.name })),
             ]}
           />
-
         </div>
       </div>
 
@@ -232,9 +203,9 @@ export default function ProductsClient({
         </div>
       )}
 
-      {/* Grid */}
+      {/* Produk Grid */}
       {loading ? (
-        <ProductsGridSkeleton />
+        <ProductSkeletonGrid count={8} />
       ) : filteredProducts.length === 0 ? (
         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md border border-gray-100 dark:border-zinc-700 p-12 text-center">
           <div className="text-6xl mb-4">🔍</div>
@@ -260,13 +231,16 @@ export default function ProductsClient({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* 🧩 Ubah grid jadi 2 kolom di mobile */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
             {currentProducts.map((product, index) => (
               <Link key={product.id} href={`/products/${product.id}`}>
                 <ProductCard product={product} showEdit={false} showStore={true} index={index} />
               </Link>
             ))}
           </div>
+
+          {/* Pagination */}
           <Pagination
             currentPage={currentPage}
             totalItems={filteredProducts.length}
