@@ -1,9 +1,10 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
+import { ProductCard } from '@/components/ui/ProductCard';
 import { ArrowLeft, MapPin, Phone, Store, Package, Eye } from 'lucide-react';
 
 const StoreMap = dynamic(() => import('@/components/StoreMap'), {
@@ -15,7 +16,7 @@ const StoreMap = dynamic(() => import('@/components/StoreMap'), {
   ),
 });
 
-// Fungsi untuk mendapatkan inisial dari nama
+// === Fungsi Utilitas ===
 function getInitials(name: string): string {
   if (!name) return '?';
   const words = name.trim().split(' ');
@@ -25,7 +26,6 @@ function getInitials(name: string): string {
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
 
-// Fungsi untuk mendapatkan warna background berdasarkan nama
 function getAvatarColor(name: string): string {
   const colors = [
     'bg-blue-500',
@@ -37,19 +37,27 @@ function getAvatarColor(name: string): string {
     'bg-yellow-500',
     'bg-teal-500',
   ];
-  
   const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return colors[index % colors.length];
 }
+
+// Format nomor WhatsApp agar selalu pakai kode 62
+const formatWhatsAppNumber = (number: string) => {
+  if (!number) return '';
+  const cleaned = number.replace(/\D/g, '');
+  if (cleaned.startsWith('62')) return cleaned;
+  if (cleaned.startsWith('0')) return '62' + cleaned.slice(1);
+  return '62' + cleaned;
+};
 
 export default function PublicStorePage() {
   const { id } = useParams();
   const router = useRouter();
   const supabase = createClient();
-
   const [store, setStore] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showFloatingButton, setShowFloatingButton] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -61,7 +69,6 @@ export default function PublicStorePage() {
     async function fetchStore() {
       const storeId = Array.isArray(id) ? id[0] : id;
 
-      // Ambil data profil toko + join dusun
       const { data: storeData, error: storeError } = await supabase
         .from('profiles')
         .select(`
@@ -71,6 +78,7 @@ export default function PublicStorePage() {
           store_description,
           whatsapp_number,
           avatar_url,
+          cover_image_url,
           latitude,
           longitude,
           created_at,
@@ -86,7 +94,6 @@ export default function PublicStorePage() {
         return;
       }
 
-      // Ambil data produk toko
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select(`
@@ -96,7 +103,7 @@ export default function PublicStorePage() {
           image_url,
           views,
           created_at,
-          categories(name)
+          categories(name, slug)
         `)
         .eq('owner_id', storeId)
         .eq('is_active', true)
@@ -110,12 +117,19 @@ export default function PublicStorePage() {
         ...storeData,
         products: productsData || [],
       });
-
       setLoading(false);
     }
 
     fetchStore();
   }, [id, supabase]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowFloatingButton(window.scrollY > 200);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   if (loading) {
     return (
@@ -143,12 +157,20 @@ export default function PublicStorePage() {
     );
   }
 
+  // === Hitung Statistik ===
   const totalProducts = store.products?.length || 0;
   const totalViews =
     store.products?.reduce((sum: number, p: any) => sum + (p.views || 0), 0) || 0;
-
   const initials = getInitials(store.store_name || store.full_name);
   const avatarColor = getAvatarColor(store.store_name || store.full_name);
+
+  // === WhatsApp URL dengan pesan umum ===
+  const whatsappMessage = encodeURIComponent(
+    `Halo ${store.store_name || 'Toko'}, saya tertarik dengan produk di toko Anda. Bisa bantu informasi lebih lanjut?`
+  );
+  const whatsappUrl = store.whatsapp_number
+    ? `https://wa.me/${formatWhatsAppNumber(store.whatsapp_number)}?text=${whatsappMessage}`
+    : '';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -164,17 +186,33 @@ export default function PublicStorePage() {
 
         {/* Store Profile Card */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-6">
+          {/* Cover Image */}
+          {store.cover_image_url && (
+            <div className="h-48 sm:h-64 w-full overflow-hidden">
+              <img
+                src={store.cover_image_url}
+                alt={`Cover ${store.store_name}`}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
           {/* Header */}
-          <div className="bg-gradient-to-r from-green-50 to-green-100/50 px-8 py-6 border-b border-green-200">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-              {/* Avatar dengan inisial atau gambar */}
+          <div
+            className={`px-4 sm:px-8 py-6 border-b border-green-200 transition-all duration-300 ${
+              store.cover_image_url
+                ? '-mt-16 bg-gradient-to-r from-green-50 to-green-100/50'
+                : 'bg-gradient-to-r from-green-50 to-green-100/50'
+            }`}
+          >
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+              {/* Avatar */}
               {store.avatar_url ? (
                 <img
                   src={store.avatar_url}
                   alt={store.store_name}
                   className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
                   onError={(e) => {
-                    // Jika gambar gagal dimuat, sembunyikan img dan tampilkan inisial
                     e.currentTarget.style.display = 'none';
                     const parent = e.currentTarget.parentElement;
                     if (parent) {
@@ -186,35 +224,40 @@ export default function PublicStorePage() {
                   }}
                 />
               ) : (
-                <div className={`w-24 h-24 rounded-full ${avatarColor} border-4 border-white shadow-lg flex items-center justify-center text-white text-2xl font-bold`}>
+                <div
+                  className={`w-24 h-24 rounded-full ${avatarColor} border-4 border-white shadow-lg flex items-center justify-center text-white text-2xl font-bold`}
+                >
                   {initials}
                 </div>
               )}
-              
+
               <div className="flex-1 text-center sm:text-left">
                 <h1 className="text-3xl font-bold text-gray-900 mb-1">
                   {store.store_name}
                 </h1>
                 <p className="text-gray-600 mb-2">{store.full_name}</p>
-
                 {store.dusun?.name && (
-                  <p className="text-sm text-gray-600 flex items-center justify-center sm:justify-start gap-1 mb-4">
+                  <p className="text-sm text-gray-600 flex items-center justify-center sm:justify-start gap-1 mb-3">
                     <MapPin className="w-4 h-4 text-green-600" />
-                    <span>Dusun {store.dusun.name}</span>
+                    <span>{store.dusun.name}</span>
                   </p>
                 )}
 
                 {/* Stats */}
-                <div className="flex flex-wrap justify-center sm:justify-start gap-4">
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg shadow-sm">
+                <div className="flex flex-wrap justify-center sm:justify-start gap-3 sm:gap-4">
+                  <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 bg-white rounded-lg shadow-sm">
                     <Package className="w-4 h-4 text-green-600" />
-                    <span className="font-semibold text-gray-900">{totalProducts}</span>
-                    <span className="text-sm text-gray-600">Produk</span>
+                    <span className="font-semibold text-gray-900 text-sm sm:text-base">
+                      {totalProducts}
+                    </span>
+                    <span className="text-xs sm:text-sm text-gray-600">Produk</span>
                   </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg shadow-sm">
+                  <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 bg-white rounded-lg shadow-sm">
                     <Eye className="w-4 h-4 text-green-600" />
-                    <span className="font-semibold text-gray-900">{totalViews}</span>
-                    <span className="text-sm text-gray-600">Views</span>
+                    <span className="font-semibold text-gray-900 text-sm sm:text-base">
+                      {totalViews}
+                    </span>
+                    <span className="text-xs sm:text-sm text-gray-600">Views</span>
                   </div>
                 </div>
               </div>
@@ -223,7 +266,7 @@ export default function PublicStorePage() {
 
           {/* Content */}
           <div className="p-8 space-y-6">
-            {/* Store Description */}
+            {/* Deskripsi Toko */}
             {store.store_description && (
               <div>
                 <h2 className="text-base font-semibold text-gray-900 mb-2">
@@ -235,14 +278,14 @@ export default function PublicStorePage() {
               </div>
             )}
 
-            {/* Contact Button */}
+            {/* WhatsApp - Desktop */}
             {store.whatsapp_number && (
-              <div>
+              <div className="hidden sm:block">
                 <h2 className="text-base font-semibold text-gray-900 mb-2">
                   Hubungi Toko
                 </h2>
                 <a
-                  href={`https://wa.me/${store.whatsapp_number.replace(/\D/g, '')}`}
+                  href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 font-semibold shadow-lg hover:shadow-xl transition-all"
@@ -253,14 +296,13 @@ export default function PublicStorePage() {
               </div>
             )}
 
-            {/* Store Location */}
+            {/* Lokasi + Koordinat + Tombol Maps */}
             {store.latitude && store.longitude && (
               <div>
                 <h2 className="text-base font-semibold text-gray-900 mb-2">
                   Lokasi Toko
                 </h2>
-
-                <div className="rounded-xl overflow-hidden border border-gray-200 mb-3">
+                <div className="rounded-xl overflow-hidden border border-gray-200 h-64 sm:h-80">
                   <StoreMap
                     latitude={store.latitude}
                     longitude={store.longitude}
@@ -269,18 +311,31 @@ export default function PublicStorePage() {
                   />
                 </div>
 
-                <div className="p-3 bg-green-50 border border-green-200 rounded-xl">
-                  <div className="flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-green-700 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-green-900 mb-0.5">
-                        Koordinat:
-                      </p>
-                      <p className="font-mono text-sm text-green-800">
-                        {store.latitude.toFixed(6)}, {store.longitude.toFixed(6)}
-                      </p>
-                    </div>
-                  </div>
+                {/* Koordinat */}
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-600">
+                  <p className="font-medium flex items-center gap-1">
+                    <MapPin className="w-4 h-4 text-green-600" />
+                    Koordinat: {store.latitude.toFixed(6)}, {store.longitude.toFixed(6)}
+                  </p>
+                  <p className="text-xs mt-1">Gunakan GPS untuk navigasi langsung</p>
+                </div>
+
+                {/* Tombol Maps */}
+                <div className="mt-2 flex gap-2">
+                  <a
+                    href={`https://maps.google.com/?q=${store.latitude},${store.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 text-center py-2 px-3 bg-blue-600 text-white text-sm rounded-lg font-medium hover:bg-blue-700 transition"
+                  >
+                    Buka di Google Maps
+                  </a>
+                  <a
+                    href={`geo:${store.latitude},${store.longitude}`}
+                    className="flex-1 text-center py-2 px-3 bg-green-600 text-white text-sm rounded-lg font-medium hover:bg-green-700 transition"
+                  >
+                    Navigasi GPS
+                  </a>
                 </div>
               </div>
             )}
@@ -289,7 +344,6 @@ export default function PublicStorePage() {
 
         {/* Products Section */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          {/* Header */}
           <div className="bg-gradient-to-r from-green-50 to-green-100/50 px-8 py-6 border-b border-green-200">
             <div className="flex items-center gap-2">
               <Package className="w-6 h-6 text-green-700" />
@@ -298,50 +352,19 @@ export default function PublicStorePage() {
               </h2>
             </div>
           </div>
-
           <div className="p-8">
             {store.products && store.products.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {store.products.map((product: any) => (
-                  <div
-                    key={product.id}
-                    className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
-                  >
-                    <div className="relative">
-                      <img
-                        src={product.image_url || '/no-image.png'}
-                        alt={product.name}
-                        className="w-full h-48 object-cover"
-                      />
-                      {product.views > 0 && (
-                        <div className="absolute top-2 right-2 bg-black/70 text-white px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1">
-                          <Eye className="w-3 h-3" />
-                          {product.views}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">
-                        {product.name}
-                      </h3>
-
-                      {product.categories?.name && (
-                        <p className="text-xs text-gray-500 mb-2 px-2 py-1 bg-gray-100 rounded inline-block">
-                          {product.categories.name}
-                        </p>
-                      )}
-
-                      <p className="text-lg font-bold text-green-600 mt-2">
-                        Rp {Number(product.price).toLocaleString('id-ID')}
-                      </p>
-
-                      <p className="text-xs text-gray-400 mt-1">
-                        Ditambahkan pada{' '}
-                        {new Date(product.created_at).toLocaleDateString('id-ID')}
-                      </p>
-                    </div>
-                  </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+                {store.products.map((product: any, index: number) => (
+                  <Link key={product.id} href={`/products/${product.id}`}>
+                    <ProductCard
+                      product={product}
+                      showEdit={false}
+                      showStore={false}
+                      index={index}
+                      compact={true}
+                    />
+                  </Link>
                 ))}
               </div>
             ) : (
@@ -354,6 +377,21 @@ export default function PublicStorePage() {
             )}
           </div>
         </div>
+
+        {/* Floating WhatsApp Button (Mobile Only) */}
+        {store.whatsapp_number && (
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-full shadow-2xl hover:from-green-700 hover:to-green-800 font-semibold transition-all ${
+              showFloatingButton ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
+            }`}
+          >
+            <Phone className="w-5 h-5" />
+            <span>Hubungi</span>
+          </a>
+        )}
       </div>
     </div>
   );

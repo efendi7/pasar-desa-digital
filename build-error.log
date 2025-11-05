@@ -1,0 +1,25 @@
+
+> pasar-desa-digital@0.1.0 build D:\ThisMyProject\umkm-kebumen\pasar-desa-digital
+> next build --turbopack --no-lint
+
+ ⚠ Linting is disabled.
+   ▲ Next.js 15.5.4 (Turbopack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Finished writing to disk in 730ms
+ ✓ Compiled successfully in 19.0s
+   Checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/18) ...
+Error occurred prerendering page "/admin/profiles". Read more: https://nextjs.org/docs/messages/prerender-error
+Error: Event handlers cannot be passed to Client Component props.
+  {onClick: function onClick, className: ..., children: ...}
+            ^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+    at stringify (<anonymous>) {
+  digest: '1741973670'
+}
+Export encountered an error on /(authenticated)/admin/profiles/page: /admin/profiles, exiting the build.
+ ⨯ Next.js build worker exited with code: 1 and signal: null
+ ELIFECYCLE  Command failed with exit code 1.

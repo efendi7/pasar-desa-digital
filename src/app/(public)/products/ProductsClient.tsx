@@ -13,7 +13,6 @@ import { Breadcrumb } from '@/components/Breadcrumb';
 import { FormSelect } from '@/components/FormSelect';
 import ProductSkeletonGrid from '@/components/dashboard/ProductSkeletonGrid';
 
-// 🦾 Lazy-load ProductGrid (opsional biar cepat render)
 const ProductGrid = dynamic(() => import('@/components/dashboard/ProductGrid'), {
   loading: () => <ProductSkeletonGrid count={8} />,
 });
@@ -72,14 +71,20 @@ export default function ProductsClient({
     const timer = setTimeout(() => {
       let filtered = products;
 
+      // Filter kategori
       if (selectedCategory !== 'all') {
         filtered = filtered.filter((p) => p.categories?.slug === selectedCategory);
       }
 
+      // 👇 PERBAIKAN: Filter dusun berdasarkan profiles.dusun.slug
       if (selectedDusun !== 'all') {
-        filtered = filtered.filter((p) => p.profiles?.dusun?.slug === selectedDusun);
+        filtered = filtered.filter((p) => {
+          // Pastikan profiles dan dusun ada
+          return p.profiles?.dusun?.slug === selectedDusun;
+        });
       }
 
+      // Filter pencarian
       const trimmedQuery = debouncedSearch.trim();
       if (trimmedQuery) {
         if (trimmedQuery.length < 3) {
@@ -103,7 +108,7 @@ export default function ProductsClient({
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [selectedCategory, selectedDusun, debouncedSearch, currentPage]);
+  }, [selectedCategory, selectedDusun, debouncedSearch, currentPage, products]);
 
   // Pagination
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
@@ -128,127 +133,143 @@ export default function ProductsClient({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // ⬇️ UI
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0 dark:text-white">
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-6 pb-24 md:pb-10 min-h-screen text-gray-900 dark:text-white transition-colors duration-300">
 
       {/* Breadcrumb */}
-      <Breadcrumb
-        items={[
-          { label: 'Beranda', href: '/', icon: <Home className="w-4 h-4 mr-1" /> },
-          { label: 'Katalog Produk', icon: <Package className="w-4 h-4 mr-1" /> },
-        ]}
-        className="dark:text-zinc-400"
-      />
-
-      {/* Page Header */}
-      <PageHeader
-        title="Katalog Produk"
-        subtitle="Temukan produk UMKM terbaik dari desa"
-      />
-
-      {/* Filter Section */}
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 overflow-hidden mb-8">
-        <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400 dark:text-zinc-500" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari produk atau toko..."
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 dark:text-white transition"
-            />
-            {searchWarning && (
-              <p className="text-xs text-orange-600 mt-1">⚠️ {searchWarning}</p>
-            )}
-          </div>
-
-          {/* Dusun Filter */}
-          <FormSelect
-            label="Dusun"
-            value={selectedDusun}
-            onChange={setSelectedDusun}
-            options={[
-              { value: 'all', label: 'Semua Dusun' },
-              ...dusuns.map((d) => ({ value: d.slug, label: d.name })),
-            ]}
-          />
-
-          {/* Kategori Filter */}
-          <FormSelect
-            label="Kategori"
-            value={selectedCategory}
-            onChange={setSelectedCategory}
-            options={[
-              { value: 'all', label: 'Semua Kategori' },
-              ...categories.map((c) => ({ value: c.slug, label: c.name })),
-            ]}
-          />
-        </div>
+      <div className="mb-4">
+        <Breadcrumb
+          items={[
+            { label: 'Beranda', href: '/', icon: <Home className="w-4 h-4 mr-1" /> },
+            { label: 'Katalog Produk', icon: <Package className="w-4 h-4 mr-1" /> },
+          ]}
+          className="dark:text-zinc-400"
+        />
       </div>
 
-      {/* Info */}
-      {!loading && (
-        <div className="mb-4 text-gray-600 dark:text-zinc-400 text-sm md:text-base">
-          {filteredProducts.length > 0 ? (
-            <>
-              Menampilkan <span className="font-semibold">{startItem}-{endItem}</span> dari{' '}
-              <span className="font-semibold">{filteredProducts.length}</span> produk
-            </>
-          ) : (
-            'Tidak ada produk yang ditampilkan'
-          )}
-        </div>
-      )}
+      {/* Page Header */}
+      <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-md border border-emerald-100 dark:border-zinc-700 overflow-hidden transition-colors duration-300 mb-6">
+        <PageHeader
+          title="Katalog Produk"
+          subtitle="Temukan produk UMKM terbaik dari desa"
+          icon={<Package className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-600 dark:text-emerald-400" />}
+        />
 
-      {/* Produk Grid */}
-      {loading ? (
-        <ProductSkeletonGrid count={8} />
-      ) : filteredProducts.length === 0 ? (
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md border border-gray-100 dark:border-zinc-700 p-12 text-center">
-          <div className="text-6xl mb-4">🔍</div>
-          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Produk Tidak Ditemukan</h3>
-          <p className="text-gray-600 dark:text-zinc-400 mb-6">
-            {searchQuery.trim().length < 3 && searchQuery.trim().length > 0
-              ? 'Masukkan minimal 3 karakter untuk pencarian'
-              : 'Coba ubah filter atau kata kunci pencarian'}
-          </p>
-          <button
-            onClick={() => {
-              setSelectedCategory('all');
-              setSelectedDusun('all');
-              setSearchQuery('');
-              setDebouncedSearch('');
-              setCurrentPage(1);
-              updateURL(1, 'all', 'all', '');
-            }}
-            className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
-          >
-            Reset Filter
-          </button>
-        </div>
-      ) : (
-        <>
-          {/* 🧩 Ubah grid jadi 2 kolom di mobile */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
-            {currentProducts.map((product, index) => (
-              <Link key={product.id} href={`/products/${product.id}`}>
-                <ProductCard product={product} showEdit={false} showStore={true} index={index} />
-              </Link>
-            ))}
+        {/* Filter Section */}
+        <div className="p-3 sm:p-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400 dark:text-zinc-500" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari produk atau toko..."
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-900 dark:text-white transition"
+              />
+              {searchWarning && (
+                <p className="text-xs text-orange-600 mt-1">⚠️ {searchWarning}</p>
+              )}
+            </div>
+
+            {/* Dusun Filter */}
+            <FormSelect
+              label="Dusun"
+              value={selectedDusun}
+              onChange={setSelectedDusun}
+              options={[
+                { value: 'all', label: 'Semua Dusun' },
+                ...dusuns.map((d) => ({ value: d.slug, label: d.name })),
+              ]}
+            />
+
+            {/* Kategori Filter */}
+            <FormSelect
+              label="Kategori"
+              value={selectedCategory}
+              onChange={setSelectedCategory}
+              options={[
+                { value: 'all', label: 'Semua Kategori' },
+                ...categories.map((c) => ({ value: c.slug, label: c.name })),
+              ]}
+            />
           </div>
 
-          {/* Pagination */}
-          <Pagination
-            currentPage={currentPage}
-            totalItems={filteredProducts.length}
-            itemsPerPage={ITEMS_PER_PAGE}
-            onPageChange={handlePageChange}
-          />
-        </>
-      )}
+          {/* Info */}
+          {!loading && (
+            <div className="mb-4 text-gray-600 dark:text-zinc-400 text-sm md:text-base">
+              {filteredProducts.length > 0 ? (
+                <>
+                  Menampilkan <span className="font-semibold">{startItem}-{endItem}</span> dari{' '}
+                  <span className="font-semibold">{filteredProducts.length}</span> produk
+                </>
+              ) : (
+                'Tidak ada produk yang ditampilkan'
+              )}
+            </div>
+          )}
+
+          {/* Produk Grid */}
+          {loading ? (
+            <ProductSkeletonGrid count={8} />
+          ) : filteredProducts.length === 0 ? (
+            <div className="text-center py-10 bg-emerald-50 dark:bg-zinc-800 rounded-lg border-2 border-dashed border-emerald-200 dark:border-zinc-700">
+              <Package className="w-12 h-12 sm:w-16 sm:h-16 text-emerald-300 dark:text-emerald-500 mx-auto mb-3" />
+              <h3 className="text-md sm:text-lg font-semibold text-emerald-800 dark:text-emerald-200 mb-2">
+                Produk Tidak Ditemukan
+              </h3>
+              <p className="text-emerald-600 dark:text-zinc-400 text-sm mb-4">
+                {searchQuery.trim().length < 3 && searchQuery.trim().length > 0
+                  ? 'Masukkan minimal 3 karakter untuk pencarian'
+                  : 'Coba ubah filter atau kata kunci pencarian'}
+              </p>
+              <button
+                onClick={() => {
+                  setSelectedCategory('all');
+                  setSelectedDusun('all');
+                  setSearchQuery('');
+                  setDebouncedSearch('');
+                  setCurrentPage(1);
+                  updateURL(1, 'all', 'all', '');
+                }}
+                className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition text-sm sm:text-base"
+              >
+                Reset Filter
+              </button>
+            </div>
+          ) : (
+            <>
+            
+
+{/* 👇 Grid: 2 kolom mobile, 3 tablet, 5 desktop */}
+<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+  {currentProducts.map((product, index) => (
+    <Link key={product.id} href={`/products/${product.id}`}>
+      <ProductCard 
+        product={product} 
+        showEdit={false} 
+        showStore={true} 
+        index={index}
+        compact={true}
+      />
+    </Link>
+  ))}
+</div>
+
+              {/* Pagination */}
+              <div className="mt-6">
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={filteredProducts.length}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

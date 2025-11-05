@@ -7,7 +7,7 @@ interface PageProps {
     page?: string; 
     category?: string; 
     search?: string;
-    dusun?: string; // 👈 1. Tambah parameter dusun
+    dusun?: string;
   }>;
 }
 
@@ -20,17 +20,19 @@ async function ProductsPage({ searchParams }: PageProps) {
   const page = parseInt(params.page || '1', 10);
   const category = params.category || 'all';
   const search = params.search || '';
-  const dusun = params.dusun || 'all'; // 👈 2. Baca parameter dusun dari URL
+  const dusun = params.dusun || 'all';
 
-  // Hitung range untuk pagination
   const from = (page - 1) * ITEMS_PER_PAGE;
   const to = from + ITEMS_PER_PAGE - 1;
 
-  // Query dasar
+  // Query dasar - join dusun dari profiles
   let query = supabase
     .from("products")
-    // 👈 3. Update select untuk mengambil data dusun melalui profiles
-    .select("*, categories(name, slug), profiles!inner(store_name, dusun(name, slug))", { count: "exact" })
+    .select(`
+      *, 
+      categories(name, slug), 
+      profiles!inner(store_name, dusun(name, slug))
+    `, { count: "exact" })
     .eq("is_active", true)
     .order("created_at", { ascending: false })
     .range(from, to);
@@ -40,13 +42,12 @@ async function ProductsPage({ searchParams }: PageProps) {
     query = query.eq("categories.slug", category);
   }
 
-  // 👈 4. Tambah filter dusun
+  // Filter berdasarkan dusun penjual (dari profiles.dusun_id)
   if (dusun !== "all") {
-    // Filter berdasarkan slug dusun yang ada di dalam tabel profiles
     query = query.eq("profiles.dusun.slug", dusun);
   }
 
-  // Filter pencarian (jika panjang >= 3)
+  // Filter pencarian
   if (search.trim().length >= 3) {
     const term = `%${search.trim()}%`;
     query = query.or(`name.ilike.${term},profiles.store_name.ilike.${term}`);
@@ -60,7 +61,7 @@ async function ProductsPage({ searchParams }: PageProps) {
     .select("*")
     .order("name");
     
-  // 👈 5. Ambil daftar semua dusun untuk dropdown filter
+  // Ambil daftar semua dusun untuk dropdown filter
   const { data: dusuns } = await supabase
     .from("dusun")
     .select("*")
@@ -71,10 +72,10 @@ async function ProductsPage({ searchParams }: PageProps) {
       <ProductsClient
         initialProducts={products || []}
         initialCategories={categories || []}
-        initialDusuns={dusuns || []} // 👈 6. Kirim daftar dusun ke client
+        initialDusuns={dusuns || []}
         initialPage={page}
         initialCategory={category}
-        initialDusun={dusun} // 👈 6. Kirim dusun yang aktif ke client
+        initialDusun={dusun}
         initialSearch={search}
         totalCount={count || 0}
       />
