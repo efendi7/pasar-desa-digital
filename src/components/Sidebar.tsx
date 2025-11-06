@@ -165,8 +165,9 @@ export default function Sidebar({
           </ul>
 
           {/* Menu Admin */}
-          {isAdmin && (
-            <ul className="hidden lg:block space-y-2 mt-6">
+{isAdmin && (
+  <ul className="space-y-2 mt-6">
+
               {!collapsed && (
                 <li className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
                   Menu Admin
