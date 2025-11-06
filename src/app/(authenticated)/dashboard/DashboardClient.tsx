@@ -102,7 +102,7 @@ export default function DashboardClient({
             {loadingProducts ? (
               <ProductSkeletonGrid count={4} />
             ) : products.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
                 {products.map((product, index) => (
                   <ProductCard
                     key={product.id}
@@ -110,6 +110,7 @@ export default function DashboardClient({
                     index={index}
                     showEdit
                     profileName={initialProfile.store_name}
+                    compact={true}
                   />
                 ))}
               </div>

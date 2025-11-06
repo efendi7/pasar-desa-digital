@@ -9,13 +9,14 @@ import {
   Plus,
   User2,
   Users,
-  Settings,
   Store,
   Home,
+  ClipboardList,
+  ShieldCheck,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
-import Logo from '@/components/Logo' // pastikan path benar
+import Logo from '@/components/Logo'
 
 interface SidebarProps {
   sidebarOpen: boolean
@@ -47,11 +48,10 @@ export default function Sidebar({
   ]
 
   const adminMenu = [
-    { href: '/admin/dashboard', label: 'Admin Dashboard', icon: LayoutDashboard },
-    { href: '/admin/products', label: 'Kelola Produk', icon: Package },
-    { href: '/admin/profiles', label: 'Kelola Profil', icon: User2 },
+    { href: '/admin/dashboard', label: 'Admin Dashboard', icon: ShieldCheck },
+    { href: '/admin/products', label: 'Kelola Produk', icon: ClipboardList },
+    { href: '/admin/profiles', label: 'Persetujuan Pengguna', icon: User2 },
     { href: '/admin/users', label: 'Kelola Pengguna', icon: Users },
-    { href: '/admin/settings', label: 'Pengaturan', icon: Settings },
   ]
 
   return (

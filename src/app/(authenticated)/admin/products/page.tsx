@@ -82,10 +82,10 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Manage Products</h1>
+          <h1 className="text-3xl font-bold">Kelola Produk</h1>
           <p className="text-gray-600 mt-2">
             Admin dapat mengaktifkan / menonaktifkan produk warga
           </p>
@@ -120,12 +120,13 @@ export default function AdminProductsPage() {
         <p className="text-gray-600">Tidak ada produk.</p>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Grid: 2 kolom di mobile, 4 kolom di desktop */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
             {products.map((product, index) => (
               <div key={product.id} className="flex flex-col">
                 <div
                   onClick={() => handleViewDetail(product.id)}
-                  className="cursor-pointer"
+                  className="cursor-pointer h-full"
                 >
                   <ProductCard
                     product={product}
@@ -133,34 +134,35 @@ export default function AdminProductsPage() {
                     showStore={true}
                     index={index}
                     profileName={product.profiles?.store_name}
+                    compact={true}
                   >
-                    <div className="mt-3 flex items-center justify-between">
+                    <div className="mt-2 flex items-center justify-between">
                       <span
-                        className={`text-sm font-medium ${
+                        className={`text-xs font-medium ${
                           product.is_active
                             ? 'text-green-700'
                             : 'text-gray-500'
                         }`}
                       >
                         {product.is_active
-                          ? 'Produk Aktif'
-                          : 'Produk Nonaktif'}
+                          ? 'Aktif'
+                          : 'Nonaktif'}
                       </span>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleToggleActive(product.id, product.is_active);
                         }}
-                        className={`relative inline-flex h-7 w-14 items-center rounded-full border transform transition-all duration-300 ${
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full border transform transition-all duration-300 ${
                           product.is_active
                             ? 'bg-green-600 border-green-600'
                             : 'bg-gray-200 border-gray-300'
                         }`}
                       >
                         <span
-                          className={`inline-block h-5 w-5 rounded-full transition-all duration-300 ${
+                          className={`inline-block h-4 w-4 rounded-full transition-all duration-300 ${
                             product.is_active
-                              ? 'translate-x-7 bg-white shadow-md'
+                              ? 'translate-x-6 bg-white shadow-md'
                               : 'translate-x-1 bg-gray-100 shadow-[0_0_4px_rgba(0,0,0,0.25)]'
                           }`}
                         />
