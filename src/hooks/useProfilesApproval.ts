@@ -10,8 +10,10 @@ export interface Profile {
   store_name: string | null;
   whatsapp_number: string | null;
   is_active: boolean;
-  is_rejected: boolean; // ✅ tambahkan properti ini
+  is_rejected: boolean;
   role: string | null;
+  created_at: string;
+   // 🟢 DITAMBAHKAN
 }
 
 export function useProfilesApproval() {
@@ -20,13 +22,14 @@ export function useProfilesApproval() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔹 Ambil semua profil
   const fetchProfiles = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, store_name, whatsapp_number, is_active, is_rejected, role') // ✅ ambil juga kolom is_rejected
+        .select(
+          'id, full_name, store_name, whatsapp_number, is_active, is_rejected, role, created_at, email'
+        ) // 🟢 created_at harus diambil supaya tidak error
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -39,7 +42,6 @@ export function useProfilesApproval() {
     }
   }, [supabase]);
 
-  // 🔹 Update status approval / penolakan
   const updateProfileStatus = useCallback(
     async (id: string, isApproved: boolean) => {
       const updateData = isApproved
@@ -73,7 +75,6 @@ export function useProfilesApproval() {
   const approveProfile = (id: string) => updateProfileStatus(id, true);
   const rejectProfile = (id: string) => updateProfileStatus(id, false);
 
-  // 🔹 Jalankan realtime listener Supabase
   useEffect(() => {
     fetchProfiles();
 
@@ -85,7 +86,6 @@ export function useProfilesApproval() {
         (payload) => {
           const { eventType, new: newRow, old } = payload;
 
-          // Tampilkan toast sesuai event
           if (eventType === 'INSERT') {
             toast.info(`Pengguna baru terdaftar: ${newRow.full_name}`);
           } else if (eventType === 'UPDATE') {
@@ -96,7 +96,6 @@ export function useProfilesApproval() {
             }
           }
 
-          // Segarkan data setelah perubahan
           fetchProfiles();
         }
       )

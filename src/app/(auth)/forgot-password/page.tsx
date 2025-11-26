@@ -1,49 +1,34 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
-import { UserPlus, Mail, Lock, Store, User, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
 import { FormInput } from '@/components/FormInput';
 import { PrimaryButton } from '@/components/PrimaryButton';
 
-export default function RegisterPage() {
+export default function ForgotPasswordPage() {
   const supabase = createClient();
 
-  const [fullName, setFullName] = useState('');
-  const [storeName, setStoreName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSignUp = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleResetPassword = async () => {
     setError('');
     setMessage('');
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/login?verified=true`,
-        data: {
-          full_name: fullName,
-          store_name: storeName,
-        },
-      },
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
     });
 
     if (error) {
       setError(error.message);
     } else {
-      setMessage('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi.');
-      setFullName('');
-      setStoreName('');
+      setMessage('Link reset password telah dikirim ke email Anda. Silakan cek inbox atau folder spam.');
       setEmail('');
-      setPassword('');
     }
 
     setLoading(false);
@@ -54,10 +39,10 @@ export default function RegisterPage() {
       {/* Header */}
       <div className="px-8 pt-8 pb-6 border-b border-gray-100">
         <h2 className="text-2xl font-bold text-gray-900 text-center">
-          Daftar Akun UMKM
+          Lupa Password
         </h2>
         <p className="text-sm text-gray-600 text-center mt-2">
-          Buat akun baru untuk mengelola produk dan toko Anda
+          Masukkan email Anda untuk menerima link reset password
         </p>
       </div>
 
@@ -71,28 +56,6 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* Full Name Input */}
-        <FormInput
-          label="Nama Lengkap"
-          type="text"
-          placeholder="Masukkan nama lengkap Anda"
-          icon={<User className="w-5 h-5 text-gray-400" />}
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          required
-        />
-
-        {/* Store Name Input */}
-        <FormInput
-          label="Nama Toko / UMKM"
-          type="text"
-          placeholder="Masukkan nama toko Anda"
-          icon={<Store className="w-5 h-5 text-gray-400" />}
-          value={storeName}
-          onChange={(e) => setStoreName(e.target.value)}
-          required
-        />
-
         {/* Email Input */}
         <FormInput
           label="Alamat Email"
@@ -101,17 +64,6 @@ export default function RegisterPage() {
           icon={<Mail className="w-5 h-5 text-gray-400" />}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-
-        {/* Password Input */}
-        <FormInput
-          label="Password"
-          type="password"
-          placeholder="Masukkan password Anda"
-          icon={<Lock className="w-5 h-5 text-gray-400" />}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
           required
         />
 
@@ -125,12 +77,12 @@ export default function RegisterPage() {
 
         {/* Submit Button */}
         <PrimaryButton
-          onClick={handleSignUp}
+          onClick={handleResetPassword}
           loading={loading}
-          icon={<UserPlus className="w-5 h-5" />}
+          icon={<Mail className="w-5 h-5" />}
           className="w-full"
         >
-          {loading ? 'Memproses...' : 'Daftar Sekarang'}
+          {loading ? 'Mengirim...' : 'Kirim Link Reset'}
         </PrimaryButton>
 
         {/* Divider */}
@@ -143,15 +95,16 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        {/* Login Link */}
+        {/* Back to Login Link */}
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            Sudah punya akun?{' '}
+            Ingat password Anda?{' '}
             <Link
               href="/login"
-              className="font-semibold text-green-600 hover:text-green-700 hover:underline transition-colors"
+              className="font-semibold text-green-600 hover:text-green-700 hover:underline transition-colors inline-flex items-center gap-1"
             >
-              Masuk Sekarang
+              <ArrowLeft className="w-4 h-4" />
+              Kembali ke Login
             </Link>
           </p>
         </div>

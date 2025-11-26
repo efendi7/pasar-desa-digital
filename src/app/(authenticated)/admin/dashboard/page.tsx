@@ -43,7 +43,6 @@ async function AdminDashboardPage() {
 
   const totalViews = productsData?.reduce((sum, product) => sum + (product.views || 0), 0) || 0;
 
-  // Calculate active stores
   let activeStoresCount = 0;
   if (activeStoresData) {
     const storesWithProducts = await Promise.all(

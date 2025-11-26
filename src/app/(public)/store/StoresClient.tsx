@@ -210,83 +210,76 @@ export default function StoresClient({
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
                 {currentStores.map((store) => (
-                  <Link
-                    key={store.id}
-                    href={`/store/${store.id}`}
-                    className="group bg-white dark:bg-zinc-800 rounded-2xl shadow-md border border-gray-200 dark:border-zinc-700 overflow-hidden hover:shadow-lg transition-all duration-300"
-                  >
-                    <div className="relative h-32 sm:h-36 bg-gray-100 dark:bg-zinc-700">
-                      {/* Cover Image */}
-                      {store.cover_image_url ? (
-                        <img
-                          src={store.cover_image_url}
-                          alt={store.store_name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-r from-emerald-100 to-emerald-50 dark:from-emerald-900 dark:to-emerald-800" />
-                      )}
+  <Link
+    key={store.id}
+    href={`/store/${store.id}`}
+    className="group bg-white dark:bg-zinc-800 rounded-2xl shadow-md border border-gray-200 dark:border-zinc-700 overflow-hidden hover:shadow-lg transition-all duration-300"
+  >
+    {/* COVER */}
+    <div className="relative h-32 sm:h-36 bg-gray-100 dark:bg-zinc-700">
+      {store.cover_image_url ? (
+        <img
+          src={store.cover_image_url}
+          alt={store.store_name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+      ) : (
+        <div className="w-full h-full bg-gradient-to-r from-emerald-100 to-emerald-50 dark:from-emerald-900 dark:to-emerald-800" />
+      )}
 
-                      {/* Gradient Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
 
-                      {/* --- FITUR BARU: AVATAR --- */}
-                      <div className="absolute -bottom-6 left-3 sm:left-4 w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white dark:border-zinc-800 shadow-md overflow-hidden bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
-                        {store.avatar_url ? (
-                          <img
-                            src={store.avatar_url}
-                            alt={store.store_name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Store className="w-6 h-6 text-gray-400 dark:text-zinc-500" />
-                        )}
-                      </div>
-                      {/* --- END AVATAR --- */}
+      {/* AVATAR */}
+      <div className="absolute -bottom-6 left-3 sm:left-4 w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white dark:border-zinc-800 shadow-md overflow-hidden bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
+        {store.avatar_url ? (
+          <img src={store.avatar_url} alt={store.store_name} className="w-full h-full object-cover" />
+        ) : (
+          <Store className="w-6 h-6 text-gray-400 dark:text-zinc-500" />
+        )}
+      </div>
+    </div>
 
-                      {/* Teks di atas Cover */}
-                      {/* Modifikasi: 'left' digeser untuk memberi ruang pada avatar */}
-                      <div className="absolute bottom-2 left-16 sm:left-20 right-2">
-                        <h3 className="text-white font-semibold text-sm sm:text-base truncate drop-shadow-md">
-                          {store.store_name || 'Toko Baru'}
-                        </h3>
-                        <p className="text-gray-200 text-xs truncate drop-shadow-sm">
-                          {store.full_name}
-                        </p>
-                      </div>
-                    </div>
+    {/* CARD CONTENT */}
+    <div className="p-3 sm:p-4 space-y-2 pt-8 sm:pt-10">
 
-                    {/* Konten Card */}
-                    {/* Modifikasi: 'pt' ditambah untuk memberi ruang pada avatar */}
-                    <div className="p-3 sm:p-4 space-y-2 pt-8 sm:pt-10">
-                      <p className="text-xs sm:text-sm text-gray-600 dark:text-zinc-400 line-clamp-2 min-h-[2.5rem]">
-                        {/* Modifikasi: Fallback text */}
-                        {store.store_description || 'Tidak ada deskripsi.'}
-                      </p>
-                      {store.dusun && (
-                        <div className="flex items-center gap-1 text-xs sm:text-sm text-gray-600 dark:text-zinc-400">
-                          <MapPin className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                          <span className="truncate">{store.dusun.name}</span>
-                        </div>
-                      )}
+      {/* NAMA TOKO */}
+      <h3 className="text-base font-semibold text-gray-900 dark:text-white line-clamp-1">
+        {store.store_name || 'Toko Baru'}
+      </h3>
 
-                      <div className="grid grid-cols-2 gap-2 pt-1">
-                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-zinc-700 rounded-lg">
-                          <Package className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          <span className="text-xs font-medium">
-                            {store._count.products}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-zinc-700 rounded-lg">
-                          <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          <span className="text-xs font-medium">
-                            {store._count.total_views}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+      {/* FULLNAME */}
+      <p className="text-xs text-gray-500 dark:text-zinc-400 line-clamp-1">
+        {store.full_name}
+      </p>
+
+      {/* DESKRIPSI */}
+      <p className="text-xs sm:text-sm text-gray-600 dark:text-zinc-400 line-clamp-2 break-words">
+        {store.store_description || 'Tidak ada deskripsi.'}
+      </p>
+
+      {/* DUSUN */}
+      {store.dusun && (
+        <div className="flex items-center gap-1 text-xs sm:text-sm text-gray-600 dark:text-zinc-400">
+          <MapPin className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+          <span className="truncate">{store.dusun.name}</span>
+        </div>
+      )}
+
+      {/* STATISTIK */}
+      <div className="grid grid-cols-2 gap-2 pt-1">
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-zinc-700 rounded-lg">
+          <Package className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span className="text-xs font-medium">{store._count.products}</span>
+        </div>
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-zinc-700 rounded-lg">
+          <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span className="text-xs font-medium">{store._count.total_views}</span>
+        </div>
+      </div>
+    </div>
+  </Link>
+))}
+
               </div>
 
               {/* Pagination */}

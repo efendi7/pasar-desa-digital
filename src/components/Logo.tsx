@@ -48,7 +48,7 @@ export default function Logo({
       <div className={`flex items-center ${currentSize.gap} ${className}`}>
         <div className="relative" style={{ width: currentSize.img, height: currentSize.img }}>
           <Image
-            src="/images/logoweb.png"
+            src="/images/logodesa.png"
             alt="Logo Kebumify"
             fill
             className="rounded-lg object-contain"
@@ -76,7 +76,7 @@ export default function Logo({
       <div className="flex justify-center mb-3">
         <div className="relative" style={{ width: verticalSize, height: verticalSize }}>
           <Image
-            src="/images/logoweb.png"
+            src="/images/logodesa.png"
             alt="Logo Kebumify"
             fill
             className="rounded-2xl object-contain"

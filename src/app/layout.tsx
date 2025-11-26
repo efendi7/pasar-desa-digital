@@ -25,7 +25,7 @@ const madeTommy = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Pasar Desa Digital",
+  title: "Kebumify",
   description: "Etalase Digital untuk Produk UMKM Desa",
 };
 
