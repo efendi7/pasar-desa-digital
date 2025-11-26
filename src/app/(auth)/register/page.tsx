@@ -1,174 +1,143 @@
-'use client';
+'use client'
 
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
-import { UserPlus, Mail, Lock, Store, User, AlertCircle, CheckCircle } from 'lucide-react';
-import { FormInput } from '@/components/FormInput';
-import { PrimaryButton } from '@/components/PrimaryButton';
+
+import { CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function RegisterPage() {
   const supabase = createClient();
+  const router = useRouter();
 
   const [fullName, setFullName] = useState('');
   const [storeName, setStoreName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
   const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSignUp = async (e: FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError(null);
     setMessage('');
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signUp({
+    // --- VALIDASI WAJIB ------------------------
+    if (!fullName || !storeName || !email || !password) {
+      setError("Semua field wajib diisi.");
+      setLoading(false);
+      return;
+    }
+
+    // --- SIGNUP SUPABASE -----------------------
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/login?verified=true`,
         data: {
           full_name: fullName,
           store_name: storeName,
         },
+        emailRedirectTo: `${location.origin}/auth/callback`,
       },
     });
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setMessage('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi.');
-      setFullName('');
-      setStoreName('');
-      setEmail('');
-      setPassword('');
+    // --- ERROR HANDLING ------------------------
+    if (signUpError) {
+      setError(signUpError.message);
+      setLoading(false);
+      return;
     }
 
+    // --- SUCCESS ------------------------------
+    setMessage('Akun berhasil dibuat. Silakan cek email untuk verifikasi.');
     setLoading(false);
   };
 
   return (
-    <>
+    <div className="w-full max-w-md mx-auto bg-white dark:bg-zinc-900 rounded-xl shadow-md border border-gray-100 dark:border-zinc-800">
+
       {/* Header */}
-      <div className="px-8 pt-8 pb-6 border-b border-gray-100">
-        <h2 className="text-2xl font-bold text-gray-900 text-center">
-          Daftar Akun UMKM
+      <div className="px-8 pt-8 pb-6 border-b border-gray-100 dark:border-zinc-800">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center">
+          Buat Akun UMKM
         </h2>
-        <p className="text-sm text-gray-600 text-center mt-2">
-          Buat akun baru untuk mengelola produk dan toko Anda
+        <p className="text-sm text-gray-600 dark:text-zinc-400 text-center mt-2">
+          Daftarkan toko dan mulai jual produk Anda
         </p>
       </div>
 
       {/* Form */}
-      <div className="p-8 space-y-5">
-        {/* Success Message */}
+      <form onSubmit={handleSignUp} className="p-8 space-y-5">
+        
+        {/* Success message */}
         {message && (
           <div className="flex items-start gap-3 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl">
-            <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <CheckCircle className="w-5 h-5 mt-0.5" />
             <p className="text-sm">{message}</p>
           </div>
         )}
 
-        {/* Full Name Input */}
-        <FormInput
-          label="Nama Lengkap"
-          type="text"
-          placeholder="Masukkan nama lengkap Anda"
-          icon={<User className="w-5 h-5 text-gray-400" />}
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          required
-        />
-
-        {/* Store Name Input */}
-        <FormInput
-          label="Nama Toko / UMKM"
-          type="text"
-          placeholder="Masukkan nama toko Anda"
-          icon={<Store className="w-5 h-5 text-gray-400" />}
-          value={storeName}
-          onChange={(e) => setStoreName(e.target.value)}
-          required
-        />
-
-        {/* Email Input */}
-        <FormInput
-          label="Alamat Email"
-          type="email"
-          placeholder="nama@email.com"
-          icon={<Mail className="w-5 h-5 text-gray-400" />}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-
-        {/* Password Input */}
-        <FormInput
-          label="Password"
-          type="password"
-          placeholder="Masukkan password Anda"
-          icon={<Lock className="w-5 h-5 text-gray-400" />}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-
-        {/* Error Message */}
+        {/* Error message */}
         {error && (
-          <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 bg-red-50 border red-200 text-red-800 px-4 py-3 rounded-xl">
+            <AlertCircle className="w-5 h-5 mt-0.5" />
             <p className="text-sm">{error}</p>
           </div>
         )}
 
-        {/* Submit Button */}
-        <PrimaryButton
-          onClick={handleSignUp}
-          loading={loading}
-          icon={<UserPlus className="w-5 h-5" />}
-          className="w-full"
+        <div>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Nama Lengkap</label>
+          <input
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            type="text"
+            className="input-field"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Nama Toko</label>
+          <input
+            value={storeName}
+            onChange={(e) => setStoreName(e.target.value)}
+            type="text"
+            className="input-field"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            type="email"
+            className="input-field"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+          <input
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            type="password"
+            className="input-field"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
         >
-          {loading ? 'Memproses...' : 'Daftar Sekarang'}
-        </PrimaryButton>
-
-        {/* Divider */}
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-white text-gray-500">atau</span>
-          </div>
-        </div>
-
-        {/* Login Link */}
-        <div className="text-center">
-          <p className="text-sm text-gray-600">
-            Sudah punya akun?{' '}
-            <Link
-              href="/login"
-              className="font-semibold text-green-600 hover:text-green-700 hover:underline transition-colors"
-            >
-              Masuk Sekarang
-            </Link>
-          </p>
-        </div>
-      </div>
-
-      {/* Footer Help */}
-      <div className="px-8 pb-8 pt-4 border-t border-gray-100 bg-gray-50">
-        <div className="flex items-center justify-center gap-4 text-xs text-gray-600">
-          <Link href="/bantuan" className="text-green-600 hover:underline">
-            Bantuan
-          </Link>
-          <span className="text-gray-300">•</span>
-          <Link href="/tentang" className="text-green-600 hover:underline">
-            Tentang Kami
-          </Link>
-        </div>
-      </div>
-    </>
+          {loading ? "Mendaftarkan..." : "Daftar"}
+        </button>
+      </form>
+    </div>
   );
 }

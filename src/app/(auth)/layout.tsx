@@ -40,7 +40,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         {/* Additional Info */}
         <p className="mt-4 text-center text-xs text-gray-500">
-          © 2025 Pasar Desa Digital. Platform UMKM Terpercaya.
+          © 2025 Kebumify. Etalase Digital UMKM Desa Kebumen.
         </p>
       </div>
     </div>

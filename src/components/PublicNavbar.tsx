@@ -102,6 +102,9 @@ export default function Navbar({
 
             {/* Navigasi utama (desktop) */}
             <div className="hidden lg:flex items-center gap-6">
+              <Link href="/" className={isActive('/')}>
+                Home
+              </Link>
               <Link href="/dashboard" className={isActive('/dashboard')}>
                 Dashboard
               </Link>
