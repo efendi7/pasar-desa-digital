@@ -21,13 +21,13 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}/reset-password?type=recovery`,
     });
 
     if (error) {
       setError(error.message);
     } else {
-      setMessage('Link reset password telah dikirim ke email Anda. Silakan cek inbox atau folder spam.');
+      setMessage('Link reset password telah dikirim ke email Anda. Silakan cek inbox atau spam.');
       setEmail('');
     }
 
@@ -48,15 +48,13 @@ export default function ForgotPasswordPage() {
 
       {/* Form */}
       <div className="p-8 space-y-5">
-        {/* Success Message */}
         {message && (
           <div className="flex items-start gap-3 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl">
-            <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <CheckCircle className="w-5 h-5" />
             <p className="text-sm">{message}</p>
           </div>
         )}
 
-        {/* Email Input */}
         <FormInput
           label="Alamat Email"
           type="email"
@@ -67,15 +65,13 @@ export default function ForgotPasswordPage() {
           required
         />
 
-        {/* Error Message */}
         {error && (
           <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5" />
             <p className="text-sm">{error}</p>
           </div>
         )}
 
-        {/* Submit Button */}
         <PrimaryButton
           onClick={handleResetPassword}
           loading={loading}
@@ -85,7 +81,6 @@ export default function ForgotPasswordPage() {
           {loading ? 'Mengirim...' : 'Kirim Link Reset'}
         </PrimaryButton>
 
-        {/* Divider */}
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-200"></div>
@@ -95,31 +90,17 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
 
-        {/* Back to Login Link */}
         <div className="text-center">
           <p className="text-sm text-gray-600">
             Ingat password Anda?{' '}
             <Link
               href="/login"
-              className="font-semibold text-green-600 hover:text-green-700 hover:underline transition-colors inline-flex items-center gap-1"
+              className="font-semibold text-green-600 hover:text-green-700 hover:underline inline-flex items-center gap-1"
             >
               <ArrowLeft className="w-4 h-4" />
               Kembali ke Login
             </Link>
           </p>
-        </div>
-      </div>
-
-      {/* Footer Help */}
-      <div className="px-8 pb-8 pt-4 border-t border-gray-100 bg-gray-50">
-        <div className="flex items-center justify-center gap-4 text-xs text-gray-600">
-          <Link href="/bantuan" className="text-green-600 hover:underline">
-            Bantuan
-          </Link>
-          <span className="text-gray-300">•</span>
-          <Link href="/tentang" className="text-green-600 hover:underline">
-            Tentang Kami
-          </Link>
         </div>
       </div>
     </>
