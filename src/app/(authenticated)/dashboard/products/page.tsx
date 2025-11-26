@@ -242,7 +242,7 @@ export default function ProductsListPage() {
                 label="Cari Produk"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Nama atau deskripsi..."
+                placeholder=""
                 icon={<Search className="w-5 h-5" />}
               />
 

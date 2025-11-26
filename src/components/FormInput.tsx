@@ -28,7 +28,8 @@ export function FormInput({
       <input
         id={inputId}
         type={inputType}
-        placeholder=" "
+        placeholder={props.placeholder && props.value ? props.placeholder : ""}
+
         {...props}
         className={`
           block w-full text-sm rounded-lg border

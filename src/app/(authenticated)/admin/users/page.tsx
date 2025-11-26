@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState, useMemo, memo } from 'react';
+import { useEffect, useState, useMemo, memo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useAdmin } from '@/hooks/useAdmin';
-import { User, Search, Home, Users, Shield, ShieldCheck, Loader2 } from 'lucide-react';
+import { User, Search, Home, Users, Loader2 } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -44,12 +44,12 @@ const Breadcrumb = memo(({ items }: any) => (
 Breadcrumb.displayName = 'Breadcrumb';
 
 // Page Header
-const PageHeader = memo(({ title, subtitle, count, icon }: any) => (
+const PageHeader = memo(({ title, subtitle, count }: any) => (
   <div className="p-6 sm:p-8 border-b border-gray-100">
     <div className="flex items-start justify-between">
       <div className="flex-1">
         <div className="flex items-center gap-3 mb-2">
-          {icon}
+          <Users className="w-6 h-6 text-gray-400" />
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{title}</h1>
         </div>
         <p className="text-gray-600 text-sm sm:text-base">{subtitle}</p>
@@ -65,7 +65,7 @@ const PageHeader = memo(({ title, subtitle, count, icon }: any) => (
 PageHeader.displayName = 'PageHeader';
 
 // Form Input
-const FormInput = memo(({ label, value, onChange, placeholder, icon }: any) => (
+const FormInput = memo(({ label, value, onChange, icon }: any) => (
   <div>
     <label className="block text-sm font-semibold text-gray-700 mb-2">{label}</label>
     <div className="relative">
@@ -78,8 +78,7 @@ const FormInput = memo(({ label, value, onChange, placeholder, icon }: any) => (
         type="text"
         value={value}
         onChange={onChange}
-        placeholder={placeholder}
-        className={`w-full ${icon ? 'pl-10' : 'pl-4'} pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder-gray-400`}
+        className={`w-full ${icon ? 'pl-10' : 'pl-4'} pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900`}
       />
     </div>
   </div>
@@ -87,7 +86,7 @@ const FormInput = memo(({ label, value, onChange, placeholder, icon }: any) => (
 FormInput.displayName = 'FormInput';
 
 // Form Select
-const FormSelect = memo(({ label, value, onChange, options, placeholder }: any) => (
+const FormSelect = memo(({ label, value, onChange, options }: any) => (
   <div>
     <label className="block text-sm font-semibold text-gray-700 mb-2">{label}</label>
     <select
@@ -95,7 +94,6 @@ const FormSelect = memo(({ label, value, onChange, options, placeholder }: any) 
       onChange={(e) => onChange(e.target.value)}
       className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900"
     >
-      {placeholder && <option value="">{placeholder}</option>}
       {options.map((opt: any) => (
         <option key={opt.value} value={opt.value}>
           {opt.label}
@@ -442,6 +440,13 @@ export default function AdminUsers() {
     return filteredUsers.slice(start, start + itemsPerPage);
   }, [filteredUsers, currentPage]);
 
+  const handleReset = useCallback(() => {
+    setSearchTerm('');
+    setFilterStatus('all');
+    setFilterRole('all');
+    setCurrentPage(1);
+  }, []);
+
   const statusOptions = [
     { label: 'Semua Status', value: 'all' },
     { label: 'Aktif', value: 'active' },
@@ -479,7 +484,7 @@ export default function AdminUsers() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-8">
       <div className="mb-6">
         <Breadcrumb
           items={[
@@ -492,58 +497,52 @@ export default function AdminUsers() {
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <PageHeader
           title="Kelola Pengguna"
-          subtitle="Kelola akses dan status pengguna dalam sistem"
+          subtitle="Daftar seluruh pengguna dalam sistem"
           count={users.length}
-          icon={<Users className="w-6 h-6 text-gray-400" />}
         />
 
-        {/* Filters */}
-        <div className="p-6 sm:p-8 bg-gray-50 border-b border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormInput
-              label="Cari Pengguna"
-              value={searchTerm}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-              placeholder="Nama, toko, atau nomor WA..."
-              icon={<Search className="w-5 h-5" />}
-            />
+        {/* Filters - Hanya muncul jika ada pengguna */}
+        {users.length > 0 && (
+          <div className="p-6 sm:p-8 bg-gray-50 border-b border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormInput
+                label="Cari Pengguna"
+                value={searchTerm}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                icon={<Search className="w-5 h-5" />}
+              />
 
-            <FormSelect
-              label="Status"
-              value={filterStatus}
-              onChange={(v: string) => setFilterStatus(v)}
-              options={statusOptions}
-            />
+              <FormSelect
+                label="Status"
+                value={filterStatus}
+                onChange={(v: string) => setFilterStatus(v)}
+                options={statusOptions}
+              />
 
-            <FormSelect
-              label="Role"
-              value={filterRole}
-              onChange={(v: string) => setFilterRole(v)}
-              options={roleOptions}
-            />
+              <FormSelect
+                label="Role"
+                value={filterRole}
+                onChange={(v: string) => setFilterRole(v)}
+                options={roleOptions}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Content */}
         <div className="p-6 sm:p-8">
           {users.length === 0 ? (
             <EmptyState />
           ) : filteredUsers.length === 0 ? (
-            <NoResults
-              onReset={() => {
-                setSearchTerm('');
-                setFilterStatus('all');
-                setFilterRole('all');
-              }}
-            />
+            <NoResults onReset={handleReset} />
           ) : (
             <>
-              {/* Desktop */}
+              {/* Desktop Table */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full min-w-[900px] border-collapse">
                   <thead className="bg-gray-50 rounded-t-xl">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-[25%]">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider rounded-tl-xl w-[25%]">
                         Pengguna
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-[20%]">
@@ -558,7 +557,7 @@ export default function AdminUsers() {
                       <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-[10%]">
                         Status
                       </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-[20%]">
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider rounded-tr-xl w-[20%]">
                         Aksi
                       </th>
                     </tr>
@@ -585,7 +584,7 @@ export default function AdminUsers() {
                 />
               </div>
 
-              {/* Mobile */}
+              {/* Mobile Cards */}
               <div className="md:hidden space-y-4">
                 {paginatedUsers.map((user) => (
                   <UserCard

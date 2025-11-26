@@ -22,6 +22,7 @@ interface MobileMenuProps {
   toggleDarkMode?: () => void
   isDarkMode?: boolean
   isPublic?: boolean
+  isLoading?: boolean // ✅ Tambahkan prop isLoading
 }
 
 export default function MobileMenu({
@@ -31,10 +32,11 @@ export default function MobileMenu({
   profile,
   isAdmin,
   handleLogout,
+  isLoading = false, // Default value untuk keamanan
 }: MobileMenuProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const isActive = (path: string) => pathname === path
+  // const isActive = (path: string) => pathname === path // Tidak digunakan
 
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
@@ -97,6 +99,17 @@ export default function MobileMenu({
       setIsMenuOpen(false)
     }
   }
+  
+  // Komponen Loader Profil Mobile (Skeleton)
+  const MobileProfileLoader = () => (
+    <div className="mb-5 text-center animate-pulse">
+      <div className="w-16 h-16 rounded-full mx-auto mb-2 border-2 border-gray-200 dark:border-zinc-700 bg-gray-100 dark:bg-zinc-800 shadow-sm" />
+      <div className="h-5 w-2/3 mx-auto bg-gray-200 dark:bg-zinc-700 rounded mb-1"></div>
+      <div className="h-4 w-1/2 mx-auto bg-gray-200 dark:bg-zinc-700 rounded"></div>
+      <div className="h-3 w-1/3 mx-auto bg-gray-200 dark:bg-zinc-700 rounded mt-1"></div>
+    </div>
+  )
+
 
   return (
     <AnimatePresence>
@@ -110,8 +123,10 @@ export default function MobileMenu({
         >
           <div className="py-4 space-y-1 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md px-4 text-gray-800 dark:text-gray-200">
             
-            {/* ===== PROFIL USER ===== */}
-            {user && profile && (
+            {/* ===== PROFIL USER / LOADER ===== */}
+            {isLoading ? (
+                <MobileProfileLoader /> // 👈 Tampilkan loader saat loading
+            ) : user && profile ? (
               <div className="mb-5 text-center">
                 {avatarUrl && !imageError ? (
                   <img
@@ -137,7 +152,18 @@ export default function MobileMenu({
                   {email}
                 </div>
               </div>
+            ) : (
+                // Tampilkan ini hanya jika loading Selesai DAN user TIDAK ADA
+                <div className="mb-5 text-center">
+                    <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                        Selamat Datang!
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Silakan masuk untuk mengelola toko Anda.
+                    </div>
+                </div>
             )}
+
 
             {/* ===== SEARCH BAR ===== */}
             <div className="relative mb-4">
@@ -175,11 +201,12 @@ export default function MobileMenu({
               )}
             </div>
 
-           
+            
             <div className="h-px bg-gray-100 dark:bg-zinc-800 my-3" />
 
             {/* ===== MENU AKUN / LOGIN ===== */}
-            {user ? (
+            {/* Tampilkan menu Akun hanya jika TIDAK loading DAN user ADA */}
+            {!isLoading && user ? ( 
               <div>
                 <div className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
                   Menu Akun
@@ -242,7 +269,7 @@ export default function MobileMenu({
                   </button>
                 </div>
               </div>
-            ) : (
+            ) : !isLoading && !user ? ( // Tampilkan Login/Daftar hanya jika loading Selesai DAN user TIDAK ADA
               <div className="space-y-2 pt-2">
                 <Link
                   href="/login"
@@ -259,7 +286,7 @@ export default function MobileMenu({
                   Daftar Toko
                 </Link>
               </div>
-            )}
+            ) : null}
           </div>
         </motion.div>
       )}

@@ -304,7 +304,7 @@ export default function EditProfilePage() {
             label="Nomor WhatsApp"
             value={whatsappNumber}
             onChange={(e) => setWhatsappNumber(e.target.value)}
-            placeholder="08xxxxxxxxxx"
+            placeholder=""
           />
 
           <div>

@@ -9,7 +9,7 @@ import { X, Menu, Sun, Moon, Bell } from 'lucide-react'
 import ProfileDropdown from './ProfileDropdown'
 import MobileMenu from './MobileMenu'
 import SearchBar from './SearchBar'
-import { useAdmin } from '@/hooks/useAdmin' // ✅ Tambahkan import useAdmin
+import { useAdmin } from '@/hooks/useAdmin'
 
 interface NavbarProps {
   onSidebarToggle: () => void
@@ -26,28 +26,36 @@ export default function Navbar({
 }: NavbarProps) {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true) // State untuk loading
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
   const supabase = createClient()
-  const { isAdmin } = useAdmin() // ✅ cek apakah user admin
+  const { isAdmin } = useAdmin()
 
   useEffect(() => {
     const checkUser = async () => {
+      setIsLoading(true) // Mulai loading
+      
       const {
         data: { user },
       } = await supabase.auth.getUser()
       setUser(user)
+
+      let profileData = null
       if (user) {
-        const { data: profileData } = await supabase
+        const { data } = await supabase
           .from('profiles')
           .select('store_name, full_name, avatar_url')
           .eq('id', user.id)
           .single()
 
-        setProfile(profileData)
+        profileData = data
       }
+      
+      setProfile(profileData)
+      setIsLoading(false) // Selesai loading
     }
     checkUser()
   }, [supabase])
@@ -79,6 +87,16 @@ export default function Navbar({
     pathname === path
       ? 'text-green-600 font-semibold'
       : 'text-gray-700 dark:text-gray-300 hover:text-green-500'
+
+  // Komponen Loader Profil untuk Navbar (Skeleton)
+  const ProfileLoader = () => (
+    <div className="flex items-center gap-3">
+      {/* Skeleton untuk Notifikasi */}
+      <div className="hidden sm:block w-6 h-6 bg-gray-200 dark:bg-zinc-700 rounded-full animate-pulse"></div>
+      {/* Skeleton untuk Avatar/Dropdown */}
+      <div className="w-10 h-10 bg-gray-200 dark:bg-zinc-700 rounded-full animate-pulse"></div>
+    </div>
+  )
 
   return (
     <nav className="sticky top-0 z-40 transition-all duration-300 bg-white/95 backdrop-blur-xl shadow-md dark:bg-neutral-900/95 w-full">
@@ -150,15 +168,19 @@ export default function Navbar({
               )}
             </button>
 
-            {/* Profile Dropdown */}
-            <ProfileDropdown
-              user={user}
-              profile={profile}
-              isDropdownOpen={isDropdownOpen}
-              setIsDropdownOpen={setIsDropdownOpen}
-              handleLogout={handleLogout}
-              dropdownRef={dropdownRef}
-            />
+            {/* ✅ Kondisi Loading untuk Profile Dropdown */}
+            {isLoading ? (
+              <ProfileLoader />
+            ) : (
+              <ProfileDropdown
+                user={user}
+                profile={profile}
+                isDropdownOpen={isDropdownOpen}
+                setIsDropdownOpen={setIsDropdownOpen}
+                handleLogout={handleLogout}
+                dropdownRef={dropdownRef}
+              />
+            )}
 
             {/* Hamburger kanan untuk Mobile Menu */}
             <motion.button
@@ -186,6 +208,7 @@ export default function Navbar({
           handleLogout={handleLogout}
           toggleDarkMode={toggleDarkMode}
           isDarkMode={isDarkMode}
+          isLoading={isLoading} // Luluskan isLoading ke MobileMenu
         />
       </div>
     </nav>

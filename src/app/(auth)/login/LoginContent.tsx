@@ -54,10 +54,10 @@ export default function LoginContent() {
       return;
     }
 
-    // Cek apakah user aktif / menunggu approval
+    // Cek apakah user aktif dan ambil ROLENYA
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('is_active')
+      .select('is_active, role') // ✅ Ambil kolom role
       .eq('id', authData.user.id)
       .single();
 
@@ -68,7 +68,12 @@ export default function LoginContent() {
     }
 
     if (profile?.is_active) {
-      router.push('/dashboard');
+      // ✅ LOGIKA BARU: Arahkan Admin ke /admin/dashboard
+      if (profile.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
     } else {
       router.push('/waiting-approval');
     }

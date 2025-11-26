@@ -32,7 +32,7 @@ export default function Sidebar({
   setCollapsed,
 }: SidebarProps) {
   const pathname = usePathname()
-  const { isAdmin } = useAdmin()
+  const { isAdmin } = useAdmin() // Mengambil status admin
 
   const generalMenu = [
     { href: '/', label: 'Beranda', icon: Home },
@@ -50,7 +50,6 @@ export default function Sidebar({
   const adminMenu = [
     { href: '/admin/dashboard', label: 'Admin Dashboard', icon: ShieldCheck },
     { href: '/admin/products', label: 'Kelola Produk', icon: ClipboardList },
-    { href: '/admin/profiles', label: 'Persetujuan Pengguna', icon: User2 },
     { href: '/admin/users', label: 'Kelola Pengguna', icon: Users },
   ]
 
@@ -80,7 +79,8 @@ export default function Sidebar({
             collapsed ? 'justify-center' : 'justify-start'
           }`}
         >
-          <Link href="/dashboard" onClick={() => setSidebarOpen(false)}>
+          {/* ✅ Ubah link jika admin sedang di halaman admin */}
+          <Link href={isAdmin ? '/admin/dashboard' : '/dashboard'} onClick={() => setSidebarOpen(false)}>
             {collapsed ? (
               <Logo
                 variant="vertical"
@@ -130,50 +130,17 @@ export default function Sidebar({
             })}
           </ul>
 
-          {/* Menu Dashboard */}
-          <ul className="hidden lg:block space-y-2">
-            {!collapsed && (
-              <li className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                Dashboard
-              </li>
-            )}
-            {baseMenu.map(({ href, label, icon: Icon }) => {
-              const active = pathname.startsWith(href)
-              return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm ${
-                      active
-                        ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800'
-                    }`}
-                  >
-                    <Icon
-                      className={`w-5 h-5 flex-shrink-0 ${
-                        active
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-gray-500 dark:text-gray-400'
-                      }`}
-                    />
-                    {!collapsed && <span className="font-medium">{label}</span>}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-
-          {/* Menu Admin */}
-{isAdmin && (
-  <ul className="space-y-2 mt-6">
-
+          {/* ======================================================= */}
+          {/* ✅ KONDISI: TAMPILKAN MENU DASHBOARD HANYA JIKA BUKAN ADMIN */}
+          {/* ======================================================= */}
+          {!isAdmin && (
+            <ul className="hidden lg:block space-y-2">
               {!collapsed && (
                 <li className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                  Menu Admin
+                  Dashboard
                 </li>
               )}
-              {adminMenu.map(({ href, label, icon: Icon }) => {
+              {baseMenu.map(({ href, label, icon: Icon }) => {
                 const active = pathname.startsWith(href)
                 return (
                   <li key={href}>
@@ -190,6 +157,49 @@ export default function Sidebar({
                         className={`w-5 h-5 flex-shrink-0 ${
                           active
                             ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-gray-500 dark:text-gray-400'
+                        }`}
+                      />
+                      {!collapsed && <span className="font-medium">{label}</span>}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+
+          {/* ======================================================= */}
+          {/* ✅ KONDISI: TAMPILKAN MENU ADMIN HANYA JIKA ADALAH ADMIN */}
+          {/* ======================================================= */}
+          {isAdmin && (
+            <ul className="space-y-2 mt-6">
+              {!collapsed && (
+                <li className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                  Menu Admin
+                </li>
+              )}
+              {adminMenu.map(({ href, label, icon: Icon }) => {
+                // Untuk menu admin, pastikan aktivasi benar (misalnya, /admin/dashboard aktif ketika pathname dimulai dengan /admin)
+                const active = pathname.startsWith('/admin') && pathname.startsWith(href) // Perlu perbaikan logika active untuk admin
+                
+                // Gunakan active yang lebih spesifik untuk Admin
+                const adminActive = pathname.startsWith(href); 
+                
+                return (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm ${
+                        adminActive
+                          ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400' // Ubah warna untuk membedakan
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800'
+                      }`}
+                    >
+                      <Icon
+                        className={`w-5 h-5 flex-shrink-0 ${
+                          adminActive
+                            ? 'text-purple-600 dark:text-purple-400'
                             : 'text-gray-500 dark:text-gray-400'
                         }`}
                       />
