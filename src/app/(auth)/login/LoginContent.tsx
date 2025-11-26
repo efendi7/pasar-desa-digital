@@ -23,10 +23,12 @@ export default function LoginContent() {
   // Pesan setelah verifikasi email
   useEffect(() => {
     if (searchParams.get('verified')) {
-      supabase.auth.signOut();
       setInfo('Email Anda sudah diverifikasi. Silakan login.');
     }
-  }, [searchParams, supabase]);
+    if (searchParams.get('error') === 'verification_failed') {
+      setError('Verifikasi email gagal. Silakan coba lagi atau hubungi admin.');
+    }
+  }, [searchParams]);
 
   // Fungsi login
   const handleLogin = async (e: FormEvent) => {
@@ -65,8 +67,11 @@ export default function LoginContent() {
       return;
     }
 
-    if (profile?.is_active) router.push('/dashboard');
-    else router.push('/waiting-approval');
+    if (profile?.is_active) {
+      router.push('/dashboard');
+    } else {
+      router.push('/waiting-approval');
+    }
 
     router.refresh();
   };
