@@ -19,36 +19,56 @@ function ResetPasswordContent() {
   const [loading, setLoading] = useState(false);
   const [checkingToken, setCheckingToken] = useState(true);
 
-  // 🔥 FIX: Tangkap token dari email lalu setSession()
+  // 🔄 FOKUS PERBAIKAN: setSession() harus dilakukan dengan sangat cepat
   useEffect(() => {
+    // Gunakan fungsi segera dieksekusi untuk memastikan setCheckingToken(false) selalu dipanggil
     const validateRecoveryLink = async () => {
-      setCheckingToken(true);
-
+      // 1. Ambil token dari URL
       const access_token = searchParams.get('access_token');
       const refresh_token = searchParams.get('refresh_token');
 
-      // Jika link mengandung token Supabase → buat session
-      if (access_token && refresh_token) {
-        await supabase.auth.setSession({
-          access_token,
-          refresh_token,
-        });
+      // Pastikan kita sudah selesai memeriksa token, terlepas dari hasilnya
+      try {
+        setCheckingToken(true);
+
+        // 2. Jika token ada, segera buat session
+        if (access_token && refresh_token) {
+          // 🔥 PERBAIKAN: setSession DULU
+          await supabase.auth.setSession({
+            access_token,
+            refresh_token,
+          });
+
+          // Setelah setSession, kita HAPUS token dari URL untuk mencegah pemakaian ulang
+          // Ini akan membantu jika pengguna merefresh halaman
+          router.replace('/reset-password');
+        }
+
+        // 3. Cek apakah session valid setelah setSession
+        // (Atau jika pengguna langsung me-refresh halaman tanpa token di URL)
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+          // Hanya set error jika tidak ada session, yang berarti token gagal di-redeem
+          setError('Link reset password tidak valid atau sudah kadaluarsa. Silakan coba minta reset baru.');
+        } else {
+          // Session aktif, hapus error lama (jika ada)
+          setError('');
+        }
+      } catch (e) {
+        // Tangani jika Supabase mengalami error saat setSession
+        console.error("Error during session validation:", e);
+        setError('Terjadi kesalahan saat memproses link. Coba lagi atau minta reset baru.');
+      } finally {
+        // Penting: pastikan loading state berakhir
+        setCheckingToken(false);
       }
-
-      // Cek apakah session valid
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
-        setError('Link reset password tidak valid atau sudah kadaluarsa.');
-      }
-
-      setCheckingToken(false);
     };
 
     validateRecoveryLink();
-  }, [searchParams, supabase]);
+  }, [searchParams, supabase, router]); // Tambahkan router sebagai dependency
 
-  // 🔥 Update password
+  // 🔥 Update password (Logika ini sudah benar, tidak perlu diubah)
   const handleUpdatePassword = async () => {
     setError('');
     setMessage('');
@@ -78,6 +98,7 @@ function ResetPasswordContent() {
     setMessage('Password berhasil diubah! Anda akan diarahkan ke halaman login...');
 
     setTimeout(async () => {
+      // Pastikan logout dan redirect terjadi setelah update berhasil
       await supabase.auth.signOut();
       router.push('/login');
     }, 2000);
@@ -95,6 +116,7 @@ function ResetPasswordContent() {
     );
   }
 
+  // Sisa komponen (Header, Form, dll.) tetap sama
   return (
     <>
       {/* Header */}
