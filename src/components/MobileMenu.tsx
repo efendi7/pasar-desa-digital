@@ -60,7 +60,7 @@ const AdminMenuItems = [
     color: 'purple',
   },
   {
-    href: '/admin/profiles',
+    href: '/admin/users',
     icon: Users,
     label: 'Kelola Pengguna',
     color: 'purple',

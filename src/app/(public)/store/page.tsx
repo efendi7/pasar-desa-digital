@@ -4,36 +4,43 @@ import { createClient } from '@/utils/supabase/server';
 
 export default async function Page() {
   const supabase = createClient();
-  const { data: stores } = await supabase.from('profiles').select(`
-    id, store_name, full_name, store_description, avatar_url, cover_image_url,
-    whatsapp_number, dusun:dusun_id ( name, slug ),
-    products ( id, views )
-  `);
+  
+  // Tambahkan role dan is_admin di SELECT, plus filter admin di query
+  const { data: stores } = await supabase
+    .from('profiles')
+    .select(`
+      id, store_name, full_name, store_description, avatar_url, cover_image_url,
+      whatsapp_number, role, is_admin,
+      dusun:dusun_id ( name, slug ),
+      products ( id, views )
+    `)
+    .eq('is_active', true)           // Hanya toko aktif
+    .neq('role', 'admin')             // ❌ Exclude role admin
+    .neq('is_admin', true);           // ❌ Exclude is_admin true
 
-  // PERBAIKAN: Transformasi data di sini
+  // Transformasi data
   const storesWithCount =
     stores?.map((s) => {
-      // 1. Destructure untuk memisahkan products dan dusun
+      // Destructure untuk memisahkan products dan dusun
       const { products, dusun, ...rest } = s;
 
       return {
-        ...rest, // Ambil sisa properti (id, store_name, dll)
+        ...rest, // Ambil sisa properti (id, store_name, role, is_admin, dll)
         
-        // 2. Perbaiki mismatch tipe 'dusun'
-        // Ambil objek pertama dari array, atau null jika tidak ada
+        // Perbaiki mismatch tipe 'dusun'
         dusun: Array.isArray(dusun) ? dusun[0] || null : dusun,
 
-        // 3. Hitung _count
+        // Hitung _count
         _count: {
           products: products.length,
           total_views: products.reduce((a, b) => a + (b.views || 0), 0),
         },
-        // Array 'products' tidak lagi dimasukkan ke objek akhir,
-        // sehingga cocok dengan interface 'StoreData' di client
       };
     }) || [];
 
-  const { data: dusuns } = await supabase.from('dusun').select('id, name, slug');
+  const { data: dusuns } = await supabase
+    .from('dusun')
+    .select('id, name, slug');
 
   return (
     <StoresClient

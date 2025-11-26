@@ -12,13 +12,13 @@ interface ProductCardProps {
   profileName?: string;
   index?: number;
   children?: React.ReactNode;
-  compact?: boolean; // 👈 Tambah prop compact
+  compact?: boolean; 
 }
 
 interface CardMetaProps {
   icon: React.ReactElement<{ className?: string }>;
   text: string;
-  compact?: boolean; // 👈 Tambah prop compact
+  compact?: boolean; 
 }
 
 /** Komponen kecil untuk meta info seperti kategori, dusun, toko */
@@ -38,7 +38,7 @@ const ProductCard = memo(
     profileName,
     index = 0,
     children,
-    compact = false, // 👈 Default false
+    compact = false, 
   }: ProductCardProps) {
     const {
       id,
@@ -48,8 +48,8 @@ const ProductCard = memo(
       image_url,
       is_active,
       categories,
-      dusun,
-      profiles,
+      // Hapus 'dusun' dari destructuring, karena data dusun ada di dalam 'profiles'
+      profiles, 
     } = product;
 
     return (
@@ -91,8 +91,14 @@ const ProductCard = memo(
           {/* Kategori */}
           {categories?.name && <CardMeta icon={<Tag />} text={categories.name} compact={compact} />}
 
-          {/* Dusun */}
-          {dusun?.name && <CardMeta icon={<MapPin />} text={dusun.name} compact={compact} />}
+          {/* 👇 PERBAIKAN: Gunakan profiles?.dusun?.name */}
+          {showStore && profiles?.dusun?.name && (
+            <CardMeta 
+              icon={<MapPin />} 
+              text={profiles.dusun.name} 
+              compact={compact} 
+            />
+          )}
 
           {/* Nama Toko */}
           {showStore && (
@@ -146,7 +152,7 @@ const ProductCard = memo(
     prev.product.is_active === next.product.is_active &&
     prev.showEdit === next.showEdit &&
     prev.showStore === next.showStore &&
-    prev.compact === next.compact // 👈 Tambah compact ke memo comparison
+    prev.compact === next.compact
 );
 
 export { ProductCard };
