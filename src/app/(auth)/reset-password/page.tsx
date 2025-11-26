@@ -1,32 +1,38 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { Lock, CheckCircle, AlertCircle } from 'lucide-react';
 import { FormInput } from '@/components/FormInput';
 import { PrimaryButton } from '@/components/PrimaryButton';
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isValidToken, setIsValidToken] = useState(false);
+  const [checkingToken, setCheckingToken] = useState(true);
 
   useEffect(() => {
-    // Check if user came from valid reset link
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkToken = async () => {
+      // Cek apakah ada session (dari link email yang sudah di-handle Supabase)
+      const { data: { session } } = await supabase.auth.getSession();
+      
       if (session) {
-        setIsValidToken(true);
+        setCheckingToken(false);
       } else {
         setError('Link reset password tidak valid atau sudah kadaluarsa.');
+        setCheckingToken(false);
       }
-    });
+    };
+
+    checkToken();
   }, [supabase]);
 
   const handleUpdatePassword = async () => {
@@ -58,8 +64,9 @@ export default function ResetPasswordPage() {
       setNewPassword('');
       setConfirmPassword('');
       
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
+      // Sign out dan redirect ke login setelah 2 detik
+      setTimeout(async () => {
+        await supabase.auth.signOut();
         router.push('/login');
       }, 2000);
     }
@@ -67,7 +74,7 @@ export default function ResetPasswordPage() {
     setLoading(false);
   };
 
-  if (!isValidToken && !error) {
+  if (checkingToken) {
     return (
       <div className="px-8 py-16 text-center">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-200 border-t-green-600"></div>
@@ -98,7 +105,7 @@ export default function ResetPasswordPage() {
           </div>
         )}
 
-        {isValidToken ? (
+        {!error ? (
           <>
             {/* New Password Input */}
             <FormInput
@@ -150,12 +157,21 @@ export default function ResetPasswordPage() {
             </PrimaryButton>
           </>
         ) : (
-          <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium">{error}</p>
-              <p className="text-xs mt-1">Silakan minta link reset password baru.</p>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">{error}</p>
+                <p className="text-xs mt-1">Link mungkin sudah expired (kadaluarsa setelah 1 jam) atau sudah digunakan.</p>
+              </div>
             </div>
+            
+            <PrimaryButton
+              onClick={() => router.push('/forgot-password')}
+              className="w-full"
+            >
+              Minta Link Baru
+            </PrimaryButton>
           </div>
         )}
       </div>
@@ -167,11 +183,26 @@ export default function ResetPasswordPage() {
             Bantuan
           </a>
           <span className="text-gray-300">•</span>
-          <a href="/tentang" className="text-green-600 hover:underline">
-            Tentang Kami
+          <a href="/login" className="text-green-600 hover:underline">
+            Kembali ke Login
           </a>
         </div>
       </div>
     </>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense 
+      fallback={
+        <div className="px-8 py-16 text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-200 border-t-green-600"></div>
+          <p className="mt-4 text-sm text-gray-600">Memuat halaman...</p>
+        </div>
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
